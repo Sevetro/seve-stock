@@ -4,14 +4,14 @@ import { ChevronDownIcon } from "@radix-ui/react-icons";
 import { selectContent, selectItem, selectTrigger } from './select.module.scss';
 
 interface SelectOption {
-  value: string;
+  value: string
   label: string
 }
 
 export type SelectOptions = SelectOption[]
 
 interface SelectProps {
-  placeholder?: string;
+  placeholder?: string
   options: SelectOption[]
 }
 

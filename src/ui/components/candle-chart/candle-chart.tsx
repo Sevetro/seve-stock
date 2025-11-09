@@ -12,7 +12,7 @@ export const CandleChart = ({ data }: CandleChartProps) => {
     const container = containerRef.current;
     if (container == null) return;
 
-    const chart = createChart(container, { width: 400, height: 400 });
+    const chart = createChart(container, { height: 400, width: 400 });
 
     const candleSeries = chart.addSeries(CandlestickSeries, {
       upColor: '#26a69a',
