@@ -1,5 +1,5 @@
-import { getFreshStockData } from "./stock-data.js";
-import { PreparedData } from "./types.js";
+import { getFreshStockData } from './stock-data.js';
+import { PreparedData } from './types.js';
 
 export async function prepareData(stooqDate: string, companiesList: CompaniesList | undefined) {
   if (companiesList === undefined) {

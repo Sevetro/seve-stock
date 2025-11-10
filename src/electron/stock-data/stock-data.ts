@@ -2,8 +2,8 @@ import path from 'path';
 import fs from 'fs';
 import { differenceInMinutes, subYears } from 'date-fns';
 
-import { dataCacheDirname } from "./constants.js";
-import { StockRecordCache } from "./types.js";
+import { dataCacheDirname } from './constants.js';
+import { StockRecordCache } from './types.js';
 import { convertNativeDateToStooqDate, convertStringDateToStooqDate, timestampParser } from './utils.js';
 import { fetchingPeriodYears, staleStockDataMinutes } from './config.js';
 

@@ -1,9 +1,9 @@
-import { ipcMain, WebFrameMain } from "electron";
-import { pathToFileURL } from "url";
-import { getUIPath } from "./path-resolver.js";
+import { ipcMain, WebFrameMain } from 'electron';
+import { pathToFileURL } from 'url';
+import { getUIPath } from './path-resolver.js';
 
 export function isDev() {
-  return process.env.NODE_ENV === "dev";
+  return process.env.NODE_ENV === 'dev';
 }
 
 export function ipcMainHandle<Key extends keyof EventPayloadMap>(
@@ -14,7 +14,7 @@ export function ipcMainHandle<Key extends keyof EventPayloadMap>(
     const senderFrame = event.senderFrame;
 
     if (senderFrame === null) {
-      throw new Error("senderFrame has been destroyed or navigated");
+      throw new Error('senderFrame has been destroyed or navigated');
     }
 
     validateEventFrame(senderFrame);
@@ -24,11 +24,11 @@ export function ipcMainHandle<Key extends keyof EventPayloadMap>(
 
 // if there will be more windows, or some router, then this may need an update
 export function validateEventFrame(frame: WebFrameMain) {
-  if (isDev() && new URL(frame.url).host === "localhost:5132") {
+  if (isDev() && new URL(frame.url).host === 'localhost:5132') {
     return;
   }
   if (frame.url !== pathToFileURL(getUIPath()).toString()) {
-    throw new Error("Malicious event!");
+    throw new Error('Malicious event!');
   }
 }
 

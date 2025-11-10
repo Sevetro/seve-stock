@@ -52,11 +52,11 @@ export async function getFreshCompaniesList() {
     const daysSinceUpdate = differenceInDays(new Date(), timestamp);
 
     if (daysSinceUpdate >= staleCompaniesListDays) {
-      console.log(`[LOG]:[getFreshCompaniesList] Companies list is stale, trying to scrap...`);
+      console.log('[LOG]:[getFreshCompaniesList] Companies list is stale, trying to scrap...');
       const scrappedCompaniesList = await scrapCompanies();
 
       if (scrappedCompaniesList === undefined || scrappedCompaniesList.length === 0) {
-        console.error(`[ERROR]:[getFreshCompaniesList] Unable to scrap fresh companies, using stale data from cache`);
+        console.error('[ERROR]:[getFreshCompaniesList] Unable to scrap fresh companies, using stale data from cache');
         return companiesList;
       } else {
         return scrappedCompaniesList;
@@ -68,10 +68,10 @@ export async function getFreshCompaniesList() {
 
   } catch (err) {
     if (err instanceof Error && 'code' in err && err.code === 'ENOENT') {
-      console.log(`[LOG]:[getFreshCompaniesList] No companies list cache file found, trying to scrap...`);
+      console.log('[LOG]:[getFreshCompaniesList] No companies list cache file found, trying to scrap...');
       return await scrapCompanies();
     } else if (err instanceof Error && err.message === 'Empty cache file') {
-      console.log(`[ERROR]:[getFreshStockData] Companies list cache file is empty, trying to scrap...`);
+      console.log('[ERROR]:[getFreshStockData] Companies list cache file is empty, trying to scrap...');
       return await scrapCompanies();
     }
     else {

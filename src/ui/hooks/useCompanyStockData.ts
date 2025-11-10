@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState } from 'react';
 
 export function useCompanyStockData(ticker: string, stooqStartDate: string) {
   const [companyStockData, setCompanyStockData] = useState<CompanyStockData>();

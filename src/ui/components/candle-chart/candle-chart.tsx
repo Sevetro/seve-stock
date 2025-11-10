@@ -1,5 +1,5 @@
-import { useLayoutEffect, useRef } from "react";
-import { CandlestickSeries, createChart, type CandlestickData } from "lightweight-charts";
+import { useLayoutEffect, useRef } from 'react';
+import { CandlestickSeries, createChart, type CandlestickData } from 'lightweight-charts';
 
 interface CandleChartProps {
   data: CandlestickData[]

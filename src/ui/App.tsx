@@ -1,5 +1,5 @@
-import "./App.css";
-import { MainFrame } from "./components/main-frame";
+import './App.css';
+import { MainFrame } from './components/main-frame';
 
 export default function App() {
   return (

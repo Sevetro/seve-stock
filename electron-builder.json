@@ -1,8 +1,10 @@
 {
   "appId": "com.lukasz-gil.resource-monitor",
-  "files": ["dist-electron", "dist-react"],
+  "files": [
+    "dist-electron",
+    "dist-react"
+  ],
   "icon": "./desktopIcon.png",
-
   "mac": {
     "target": "dmg"
   },
@@ -11,8 +13,12 @@
     "category": "Utility"
   },
   "win": {
-    "target": ["portable", "msi"]
+    "target": [
+      "portable",
+      "msi"
+    ]
   },
-
-  "extraResources": ["dist-electron/preload.cjs"]
+  "extraResources": [
+    "dist-electron/preload.cjs"
+  ]
 }

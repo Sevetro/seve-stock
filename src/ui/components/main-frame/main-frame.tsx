@@ -1,12 +1,12 @@
-import { useState } from "react";
+import { useState } from 'react';
 
-import { Combobox, Select } from "../../design-system";
-import { useCompaniesList } from "../../hooks/useCompaniesList";
-import { CandleChart } from "../candle-chart/candle-chart";
-import { useCompanyStockData } from "../../hooks/useCompanyStockData";
-import { createCandlestickData } from "../candle-chart/candle-chart.utils";
-import type { SelectOptions } from "../../design-system/select";
-import { mainFrame } from "./main-frame.module.scss";
+import { Combobox, Select } from '../../design-system';
+import { useCompaniesList } from '../../hooks/useCompaniesList';
+import { CandleChart } from '../candle-chart/candle-chart';
+import { useCompanyStockData } from '../../hooks/useCompanyStockData';
+import { createCandlestickData } from '../candle-chart/candle-chart.utils';
+import type { SelectOptions } from '../../design-system/select';
+import { mainFrame } from './main-frame.module.scss';
 
 function createSelectOptions(companiesList: CompaniesList | undefined) {
   return companiesList?.map(({ company, ticker }) => ({ label: company, value: ticker })) ?? [];
@@ -14,7 +14,7 @@ function createSelectOptions(companiesList: CompaniesList | undefined) {
 
 export const MainFrame = () => {
   const companiesList = useCompaniesList();
-  const [value, setValue] = useState("");
+  const [value, setValue] = useState('');
 
   const companyStockData = useCompanyStockData(value, '20241010');
 
@@ -31,7 +31,7 @@ export const MainFrame = () => {
 
       <Select options={selectOptions} />
 
-      {value !== "" && <CandleChart data={createCandlestickData(companyStockData ?? [])} />}
+      {value !== '' && <CandleChart data={createCandlestickData(companyStockData ?? [])} />}
 
     </div>
   );

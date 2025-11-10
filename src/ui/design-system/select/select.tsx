@@ -1,5 +1,5 @@
 import { Select as RadixSelect } from 'radix-ui';
-import { ChevronDownIcon } from "@radix-ui/react-icons";
+import { ChevronDownIcon } from '@radix-ui/react-icons';
 
 import { selectContent, selectItem, selectTrigger } from './select.module.scss';
 

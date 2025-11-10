@@ -3,11 +3,11 @@ import {
   ComboboxItem as AriaComboboxItem,
   ComboboxList as AriaComboboxList,
   ComboboxProvider as AriaComboboxProvider
-} from "@ariakit/react";
+} from '@ariakit/react';
 import { Select as RadixSelect } from 'radix-ui';
-import { matchSorter } from "match-sorter";
-import { startTransition, useState } from "react";
-import { CheckIcon, ChevronDownIcon, LoopIcon } from "@radix-ui/react-icons";
+import { matchSorter } from 'match-sorter';
+import { startTransition, useState } from 'react';
+import { CheckIcon, ChevronDownIcon, LoopIcon } from '@radix-ui/react-icons';
 
 interface ComboboxOption {
   value: string;
@@ -24,11 +24,11 @@ interface ComboboxProps {
 
 export const Combobox = ({ options, value, setValue }: ComboboxProps) => {
   const [open, setOpen] = useState(false);
-  const [searchValue, setSearchValue] = useState("");
+  const [searchValue, setSearchValue] = useState('');
 
   const matches = () => {
     if (!searchValue) return options;
-    const keys = ["label", "value"];
+    const keys = ['label', 'value'];
     const matches = matchSorter(options, searchValue, { keys });
 
     const selectedOption = options.find(option => option.value === value);
