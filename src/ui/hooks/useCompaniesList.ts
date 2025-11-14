@@ -4,11 +4,7 @@ export function useCompaniesList() {
   const [companiesList, setCompaniesList] = useState<CompaniesList>();
 
   useEffect(() => {
-    async function getCompaniesList() {
-      setCompaniesList(await window.electron.getCompaniesList());
-    }
-
-    getCompaniesList();
+    (async () => setCompaniesList(await window.electron.getCompaniesList()))();
   }, []);
 
   return companiesList;

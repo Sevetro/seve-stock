@@ -13,7 +13,7 @@ function createStockDataObject(record: string): StockDataRecord {
   const high = parseFloat(recordData[2]);
   const low = parseFloat(recordData[3]);
   const close = parseFloat(recordData[4]);
-  const avg = (open + close) / 2;
+  const avg = Number(((open + high + low + close) / 4).toFixed(3));
 
   return {
     date: recordData[0],
@@ -35,8 +35,9 @@ async function fetchStockData(ticker: string) {
     if (!res.ok) throw new Error(`HTTP ${res.status} for ${ticker}`);
 
     const data = await res.text();
-    if (!data || data.trim().length === 0) throw new Error(`Empty response for ${ticker}`);
-    if (data === 'Exceeded the daily hits limit') throw new Error(`Exceeded the daily hits limit when fetching ${ticker}`);
+    if (!data || data.trim().length === 0) throw new Error(`Empty response for ${ticker}.`);
+    if (data === 'Exceeded the daily hits limit') throw new Error(`Exceeded the daily hits limit when fetching ${ticker}.`);
+    if (data === 'No data') throw new Error(`No available data for ${ticker}.`);
 
     const records = data.trim().split(/\r?\n/);
     records.shift();

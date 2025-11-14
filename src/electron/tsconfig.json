@@ -5,6 +5,14 @@
     "module": "nodenext",
     "outDir": "../../dist-electron",
     "skipLibCheck": true,
-    "types": ["../../types", "node"] //not sure if "../../types" is needed
-  }
+    "types": [
+      "../../types",
+      "node"
+    ] //not sure if "../../types" is needed
+    ,
+  },
+  "include": [
+    "./**/*",
+    "../shared/**/*"
+  ]
 }

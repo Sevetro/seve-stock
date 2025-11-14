@@ -2,7 +2,8 @@ import { contextBridge, ipcRenderer } from "electron";
 
 contextBridge.exposeInMainWorld("electron", {
   getCompaniesList: async () => ipcInvoke('getCompaniesList'),
-  getCompanyStockData: async (ticker, startDate) => ipcInvoke('getCompanyStockData', ticker, startDate)
+  getCompanyStockData: async (ticker, stooqStartDate) => ipcInvoke('getCompanyStockData', ticker, stooqStartDate),
+  getAvgPrice: async (ticker, stooqStartDate) => ipcInvoke('getAvgPrice', ticker, stooqStartDate)
 } satisfies Window["electron"]);
 
 // this happens in UI

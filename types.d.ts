@@ -1,13 +1,15 @@
 interface Window {
   electron: {
     getCompaniesList: () => Promise<CompaniesList | undefined>
-    getCompanyStockData: (ticker, startDate) => Promise<CompanyStockData | undefined>
+    getCompanyStockData: (ticker: string, stooqStartDate: string) => Promise<CompanyStockData | undefined>
+    getAvgPrice: (ticker: string, stooqStartDate: string) => Promise<number | undefined>
   };
 }
 
 type EventPayloadMap = {
   getCompaniesList: Promise<CompaniesList | undefined>
   getCompanyStockData: Promise<CompanyStockData | undefined>
+  getAvgPrice: Promise<number | undefined>
 };
 
 interface CompanyWithSymbol {
