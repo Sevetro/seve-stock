@@ -23,13 +23,27 @@ export const MainFrame = () => {
   const companiesList = useCompaniesList();
   const [value, setValue] = useState('');
 
+  // const [avgPrice, setAvgPrice] = useState(0);
+
   const companyStockData = useCompanyStockData(value, '20241010');
+
+  async function handleButtonClick() {
+    try {
+      const price = await window.electron.getAvgPrice('pkn', '20051010');
+      console.log('price', price);
+    } catch (err) {
+      console.error(err);
+    }
+
+  }
 
   return (
     <div className={mainFrame}>
       <Combobox options={createSelectOptions(companiesList)} value={value} setValue={setValue} />
 
       <Select options={selectOptions} />
+
+      <button onClick={handleButtonClick}> dupa</button>
 
       {value !== '' && <CandleChart data={createCandlestickData(companyStockData ?? [])} />}
 

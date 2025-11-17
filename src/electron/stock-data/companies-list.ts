@@ -2,20 +2,27 @@ import fs from 'fs';
 import path from 'path';
 import { differenceInDays } from 'date-fns';
 
-import { companiesListFilename, dataCacheDirname } from './constants.js';
+import { dataCacheDirname } from './constants.js';
 import { CompaniesListCache } from './types.js';
 import { timestampParser } from './utils.js';
 import { staleCompaniesListDays } from './config.js';
+import { errors } from '../shared-with-ui/errors.js';
+import { consoleErrorAndPayload, consoleLogAndPayload } from '../utils/message.js';
+import { getErrorMsg, isError } from '../utils/error.js';
+import { logs } from '../shared-with-ui/logs.js';
 
+const companiesListCachePath = path.join(dataCacheDirname, 'companies-list.json');
 const companyDataRegex = /data-rowkey="GPW:([A-Z]+)[\s\S]*?https:\/\/s3-symbol-logo\.tradingview\.com\/([^.]+)[\s\S]*?title="(?:[^"]*−\s*)?([^"]+)"/g;
 const redundantSuffixRegex = /\(?\b(?:Sp[oó]lka\s+Akcyjna|S\s*\.?\s*A\.?)\b\.?\)?/gi;
 const pageWithCompaniesList = 'https://pl.tradingview.com/markets/stocks-poland/market-movers-large-cap/';
 
-async function scrapCompanies() {
+async function scrapCompanies(payload: Payload<any>) {
   try {
     const res = await fetch(pageWithCompaniesList);
     const html = await res.text();
     const matchedData = [...html.matchAll(companyDataRegex)];
+
+    if (matchedData.length === 0) throw new Error(errors.cantScrap);
 
     const companiesList = matchedData.map(m => ({
       ticker: m[1],
@@ -28,54 +35,55 @@ async function scrapCompanies() {
       companiesList
     };
 
-    const filePath = path.join(dataCacheDirname, companiesListFilename);
     fs.mkdirSync(dataCacheDirname, { recursive: true });
-    fs.writeFileSync(filePath, JSON.stringify(companiesWithSymbolsWithTimestamp, null, 2));
+    fs.writeFileSync(companiesListCachePath, JSON.stringify(companiesWithSymbolsWithTimestamp, null, 2));
 
     return companiesList;
 
   } catch (err) {
-    console.error('[ERROR]:[scrapCompanies]', err);
+    consoleErrorAndPayload(payload, scrapCompanies.name, err);
   }
 }
 
 export async function getFreshCompaniesList() {
-  const filePath = path.join(dataCacheDirname, companiesListFilename);
+  const payload: Payload<CompaniesList> = {};
 
   try {
-    const rawData = fs.readFileSync(filePath, 'utf-8');
+    const rawData = fs.readFileSync(companiesListCachePath, 'utf-8');
     const parsedData: CompaniesListCache = JSON.parse(rawData, timestampParser);
     const { timestamp, companiesList } = parsedData;
 
-    if (companiesList.length === 0) throw new Error('Empty cache file');
+    if (companiesList.length === 0) throw new Error(errors.companiesListCacheEmpty);
 
     const daysSinceUpdate = differenceInDays(new Date(), timestamp);
 
     if (daysSinceUpdate >= staleCompaniesListDays) {
-      console.log('[LOG]:[getFreshCompaniesList] Companies list is stale, trying to scrap...');
-      const scrappedCompaniesList = await scrapCompanies();
+      consoleLogAndPayload(payload, getFreshCompaniesList.name, logs.companiesListStale);
+      const freshCompaniesList = await scrapCompanies(payload);
 
-      if (scrappedCompaniesList === undefined || scrappedCompaniesList.length === 0) {
-        console.error('[ERROR]:[getFreshCompaniesList] Unable to scrap fresh companies, using stale data from cache');
-        return companiesList;
+      if (freshCompaniesList === undefined || freshCompaniesList.length === 0) {
+        payload.data = companiesList;
+        throw new Error(errors.usingStaleCompaniesList);
       } else {
-        return scrappedCompaniesList;
+        payload.data = freshCompaniesList;
       }
 
     } else {
-      return companiesList;
+      payload.data = companiesList;
     }
 
   } catch (err) {
-    if (err instanceof Error && 'code' in err && err.code === 'ENOENT') {
-      console.log('[LOG]:[getFreshCompaniesList] No companies list cache file found, trying to scrap...');
-      return await scrapCompanies();
-    } else if (err instanceof Error && err.message === 'Empty cache file') {
-      console.log('[ERROR]:[getFreshStockData] Companies list cache file is empty, trying to scrap...');
-      return await scrapCompanies();
+    if (isError(err) && 'code' in err && err.code === 'ENOENT') {
+      consoleLogAndPayload(payload, getFreshCompaniesList.name, logs.companiesListCacheMissing);
+      payload.data = await scrapCompanies(payload);
+    } else if (getErrorMsg(err) === errors.companiesListCacheEmpty) {
+      consoleErrorAndPayload(payload, getFreshCompaniesList.name, err);
+      payload.data = await scrapCompanies(payload);
     }
     else {
-      console.error('[ERROR]:[getFreshCompaniesList]', err);
+      consoleErrorAndPayload(payload, getFreshCompaniesList.name, err);
     }
   }
+
+  return payload;
 }

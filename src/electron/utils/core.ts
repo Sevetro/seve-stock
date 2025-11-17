@@ -1,9 +1,20 @@
 import { ipcMain, WebFrameMain } from 'electron';
 import { pathToFileURL } from 'url';
+
 import { getUIPath } from './path-resolver.js';
 
 export function isDev() {
   return process.env.NODE_ENV === 'dev';
+}
+
+// if there will be more windows, or some router, then this may need an update
+function validateEventFrame(frame: WebFrameMain) {
+  if (isDev() && new URL(frame.url).host === 'localhost:5132') {
+    return;
+  }
+  if (frame.url !== pathToFileURL(getUIPath()).toString()) {
+    throw new Error('Malicious event!');
+  }
 }
 
 export function ipcMainHandle<Key extends keyof EventPayloadMap>(
@@ -20,16 +31,6 @@ export function ipcMainHandle<Key extends keyof EventPayloadMap>(
     validateEventFrame(senderFrame);
     return handler(...args);
   });
-}
-
-// if there will be more windows, or some router, then this may need an update
-export function validateEventFrame(frame: WebFrameMain) {
-  if (isDev() && new URL(frame.url).host === 'localhost:5132') {
-    return;
-  }
-  if (frame.url !== pathToFileURL(getUIPath()).toString()) {
-    throw new Error('Malicious event!');
-  }
 }
 
 // export function ipcWebContentsSend<Key extends keyof EventPayloadMap>(

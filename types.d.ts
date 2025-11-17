@@ -1,23 +1,27 @@
 interface Window {
   electron: {
-    getCompaniesList: () => Promise<CompaniesList | undefined>
+    getCompaniesList: () => Promise<Payload<CompaniesList | undefined>>
     getCompanyStockData: (ticker: string, stooqStartDate: string) => Promise<CompanyStockData | undefined>
     getAvgPrice: (ticker: string, stooqStartDate: string) => Promise<number | undefined>
   };
 }
 
 type EventPayloadMap = {
-  getCompaniesList: Promise<CompaniesList | undefined>
+  getCompaniesList: Promise<Payload<CompaniesList | undefined>>
   getCompanyStockData: Promise<CompanyStockData | undefined>
   getAvgPrice: Promise<number | undefined>
 };
+
+interface Payload<Data> {
+  data?: Data
+  messages?: string[]
+}
 
 interface CompanyWithSymbol {
   ticker: string
   company: string
   fullname: string
 }
-
 type CompaniesList = CompanyWithSymbol[]
 
 interface StockDataRecord {
@@ -27,6 +31,5 @@ interface StockDataRecord {
   low: number
   close: number
   avg: number
-};
-
+}
 type CompanyStockData = StockDataRecord[]

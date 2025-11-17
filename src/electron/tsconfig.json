@@ -9,10 +9,5 @@
       "../../types",
       "node"
     ] //not sure if "../../types" is needed
-    ,
-  },
-  "include": [
-    "./**/*",
-    "../shared/**/*"
-  ]
+  }
 }
