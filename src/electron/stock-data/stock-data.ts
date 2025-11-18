@@ -1,11 +1,16 @@
 import path from 'path';
 import fs from 'fs';
 import { differenceInMinutes, subYears } from 'date-fns';
+import { WebContents } from 'electron';
 
 import { dataCacheDirname } from './constants.js';
 import { StockRecordCache } from './types.js';
 import { convertNativeDateToStooqDate, convertStringDateToStooqDate, timestampParser } from './utils.js';
 import { fetchingPeriodYears, staleStockDataMinutes } from './config.js';
+import { printAndSendError, printAndSendLog } from '../utils/message.js';
+import { errors } from '../shared-with-ui/errors.js';
+import { getErrorMsg, isError } from '../utils/error.js';
+import { logs } from '../shared-with-ui/logs.js';
 
 function createStockDataObject(record: string): StockDataRecord {
   const recordData = record.split(',');
@@ -25,7 +30,7 @@ function createStockDataObject(record: string): StockDataRecord {
   };
 }
 
-async function fetchStockData(ticker: string) {
+async function fetchStockData(ticker: string, webContents: WebContents) {
   const today = convertNativeDateToStooqDate(new Date());
   const startDate = convertNativeDateToStooqDate(subYears(new Date(), fetchingPeriodYears));
   const url = `https://stooq.com/q/d/l/?s=${ticker}&d1=${startDate}&d2=${today}&i=d`;
@@ -35,9 +40,9 @@ async function fetchStockData(ticker: string) {
     if (!res.ok) throw new Error(`HTTP ${res.status} for ${ticker}`);
 
     const data = await res.text();
-    if (!data || data.trim().length === 0) throw new Error(`Empty response for ${ticker}.`);
-    if (data === 'Exceeded the daily hits limit') throw new Error(`Exceeded the daily hits limit when fetching ${ticker}.`);
-    if (data === 'No data') throw new Error(`No available data for ${ticker}.`);
+    if (!data || data.trim().length === 0) throw new Error(`${errors.emptyStockDataResponse} ${ticker}.`);
+    if (data === 'Exceeded the daily hits limit') throw new Error(`${errors.exceededDailyHitsLimit} ${ticker}.`);
+    if (data === 'No data') throw new Error(`${errors.noAvailableStockData} ${ticker}.`);
 
     const records = data.trim().split(/\r?\n/);
     records.shift();
@@ -56,54 +61,54 @@ async function fetchStockData(ticker: string) {
     return stockData;
 
   } catch (err) {
-    console.error('[ERROR]:[fetchStockData]', err instanceof Error && err.message);
+    printAndSendError(webContents, fetchStockData.name, err);
   }
 }
 
-export async function getFreshStockData(ticker: string, stooqStartDate: string) {
+export async function getFreshStockData(ticker: string, stooqStartDate: string, webContents: WebContents) {
   const endDate = convertNativeDateToStooqDate(new Date());
   const filePath = path.join(dataCacheDirname, `${ticker}.json`);
-  let freshStockData: CompanyStockData | undefined;
+  let finalStockData: CompanyStockData | undefined;
 
   try {
     const rawData = fs.readFileSync(filePath, 'utf-8');
     const parsedData: StockRecordCache = JSON.parse(rawData, timestampParser);
     const { timestamp, stockData } = parsedData;
 
-    if (stockData.length === 0) throw new Error('Empty cache file');
+    if (stockData.length === 0) throw new Error(`${ticker} ${logs.emptyTickerCache}`);
 
     const minutesSinceUpdate = differenceInMinutes(new Date(), timestamp);
 
     if (minutesSinceUpdate >= staleStockDataMinutes) {
-      console.log(`[LOG]:[getFreshStockData] Stock data for ${ticker} is stale, trying to fetch...`);
-      const fetchedStockData = await fetchStockData(ticker);
+      printAndSendLog(webContents, getFreshStockData.name, `${ticker} ${logs.stockDataStale}`);
+      const freshStockData = await fetchStockData(ticker, webContents);
 
-      if (fetchedStockData === undefined || fetchedStockData.length === 0) {
-        console.error(`[ERROR]:[getFreshStockData] Unable to fetch fresh stock data for ${ticker}, using stale data from cache`);
-        freshStockData = stockData;
+      if (freshStockData === undefined || freshStockData.length === 0) {
+        printAndSendLog(webContents, getFreshStockData.name, `${ticker} ${errors.freshStockDataUnavailable}`);
+        finalStockData = stockData;
       } else {
-        freshStockData = fetchedStockData;
+        finalStockData = freshStockData;
       }
 
     } else {
-      freshStockData = stockData;
+      finalStockData = stockData;
     }
 
   } catch (err) {
-    if (err instanceof Error && 'code' in err && err.code === 'ENOENT') {
-      console.log(`[LOG]:[getFreshStockData] No cache file found for ${ticker}, trying to fetch...`);
-      freshStockData = await fetchStockData(ticker);
+    if (isError(err) && 'code' in err && err.code === 'ENOENT') {
+      printAndSendLog(webContents, getFreshStockData.name, `${ticker} ${logs.tickerCacheNotFound}`);
+      finalStockData = await fetchStockData(ticker, webContents);
     }
-    else if (err instanceof Error && err.message === 'Empty cache file') {
-      console.log(`[LOG]:[getFreshStockData] Cache file for ${ticker} is empty, trying to fetch...`);
-      freshStockData = await fetchStockData(ticker);
+    else if (getErrorMsg(err) === `${ticker} ${logs.emptyTickerCache}`) {
+      printAndSendLog(webContents, getFreshStockData.name, `${ticker} ${logs.emptyTickerCache}`);
+      finalStockData = await fetchStockData(ticker, webContents);
     }
     else {
-      console.error('[ERROR]:[getFreshStockData]', err);
+      printAndSendError(webContents, getFreshStockData.name, err);
     }
   }
 
-  return freshStockData?.filter((stockRecord) =>
+  return finalStockData?.filter((stockRecord) =>
     convertStringDateToStooqDate(stockRecord.date) >= stooqStartDate &&
     convertStringDateToStooqDate(stockRecord.date) <= endDate);
 }

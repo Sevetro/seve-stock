@@ -1,4 +1,4 @@
-import { app, BrowserWindow } from 'electron';
+import { app, BrowserWindow, WebContents } from 'electron';
 
 import { ipcMainHandle, isDev } from './utils/core.js';
 import { getPreloadPath, getUIPath } from './utils/path-resolver.js';
@@ -7,8 +7,8 @@ import { getFreshCompaniesList } from './stock-data/companies-list.js';
 import { getFreshStockData } from './stock-data/stock-data.js';
 import { convertStringDateToStooqDate } from './stock-data/utils.js';
 
-async function getAvgPrice(ticker: string, stooqStartDate: string) {
-  const companyStockData = await getFreshStockData(ticker, stooqStartDate);
+async function getAvgPrice(ticker: string, stooqStartDate: string, webContents: WebContents) {
+  const companyStockData = await getFreshStockData(ticker, stooqStartDate, webContents);
 
   try {
     if (companyStockData === undefined) {
@@ -52,9 +52,10 @@ app.whenReady().then(async () => {
 
   mainWindow.webContents.openDevTools();
 
-  ipcMainHandle('getCompaniesList', () => getFreshCompaniesList(mainWindow.webContents));
-  ipcMainHandle('getCompanyStockData', getFreshStockData);
-  ipcMainHandle('getAvgPrice', getAvgPrice);
+  const { webContents } = mainWindow;
+  ipcMainHandle('getCompaniesList', () => getFreshCompaniesList(webContents));
+  ipcMainHandle('getCompanyStockData', (ticker, stooqStartDate) => getFreshStockData(ticker, stooqStartDate, webContents));
+  ipcMainHandle('getAvgPrice', (ticker, stooqStartDate) => getAvgPrice(ticker, stooqStartDate, webContents));
 
   mainWindow.on('closed', () => {
     app.quit();
