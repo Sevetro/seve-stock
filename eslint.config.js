@@ -32,6 +32,9 @@ export default tseslint.config([
       "react/jsx-tag-spacing": ["error", {
         "beforeClosing": "never"
       }],
+      "react/jsx-first-prop-new-line": ["error", "multiline"],
+      "react/jsx-max-props-per-line": ["error", { "maximum": 1, "when": "multiline" }],
+      "react/jsx-closing-bracket-location": ["error", "tag-aligned"],
       "comma-dangle": ["error", "never"],
       "no-multiple-empty-lines": ["error", { "max": 1, "maxBOF": 0, "maxEOF": 0 }],
       "eol-last": ["error", "never"] //WARN: this may cause issues

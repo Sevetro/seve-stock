@@ -40,9 +40,9 @@ async function fetchStockData(ticker: string, webContents: WebContents) {
     if (!res.ok) throw new Error(`HTTP ${res.status} for ${ticker}`);
 
     const data = await res.text();
-    if (!data || data.trim().length === 0) throw new Error(`${errors.emptyStockDataResponse} ${ticker}.`);
-    if (data === 'Exceeded the daily hits limit') throw new Error(`${errors.exceededDailyHitsLimit} ${ticker}.`);
-    if (data === 'No data') throw new Error(`${errors.noAvailableStockData} ${ticker}.`);
+    if (!data || data.trim().length === 0) throw new Error(errors.emptyStockDataResponse(ticker));
+    if (data === 'Exceeded the daily hits limit') throw new Error(errors.exceededDailyHitsLimit(ticker));
+    if (data === 'No data') throw new Error(errors.noAvailableStockData(ticker));
 
     const records = data.trim().split(/\r?\n/);
     records.shift();
@@ -59,7 +59,6 @@ async function fetchStockData(ticker: string, webContents: WebContents) {
     fs.writeFileSync(filePath, JSON.stringify(stockDataWithTimestamp, null, 2));
 
     return stockData;
-
   } catch (err) {
     printAndSendError(webContents, fetchStockData.name, err);
   }
@@ -75,16 +74,16 @@ export async function getFreshStockData(ticker: string, stooqStartDate: string, 
     const parsedData: StockRecordCache = JSON.parse(rawData, timestampParser);
     const { timestamp, stockData } = parsedData;
 
-    if (stockData.length === 0) throw new Error(`${ticker} ${logs.emptyTickerCache}`);
+    if (stockData.length === 0) throw new Error(logs.emptyTickerCache(ticker));
 
     const minutesSinceUpdate = differenceInMinutes(new Date(), timestamp);
 
     if (minutesSinceUpdate >= staleStockDataMinutes) {
-      printAndSendLog(webContents, getFreshStockData.name, `${ticker} ${logs.stockDataStale}`);
+      printAndSendLog(webContents, getFreshStockData.name, logs.stockDataStale(ticker));
       const freshStockData = await fetchStockData(ticker, webContents);
 
       if (freshStockData === undefined || freshStockData.length === 0) {
-        printAndSendLog(webContents, getFreshStockData.name, `${ticker} ${errors.freshStockDataUnavailable}`);
+        printAndSendLog(webContents, getFreshStockData.name, errors.freshStockDataUnavailable(ticker));
         finalStockData = stockData;
       } else {
         finalStockData = freshStockData;
@@ -93,14 +92,13 @@ export async function getFreshStockData(ticker: string, stooqStartDate: string, 
     } else {
       finalStockData = stockData;
     }
-
   } catch (err) {
     if (isError(err) && 'code' in err && err.code === 'ENOENT') {
-      printAndSendLog(webContents, getFreshStockData.name, `${ticker} ${logs.tickerCacheNotFound}`);
+      printAndSendLog(webContents, getFreshStockData.name, logs.tickerCacheNotFound(ticker));
       finalStockData = await fetchStockData(ticker, webContents);
     }
-    else if (getErrorMsg(err) === `${ticker} ${logs.emptyTickerCache}`) {
-      printAndSendLog(webContents, getFreshStockData.name, `${ticker} ${logs.emptyTickerCache}`);
+    else if (getErrorMsg(err) === logs.emptyTickerCache(ticker)) {
+      printAndSendLog(webContents, getFreshStockData.name, logs.emptyTickerCache(ticker));
       finalStockData = await fetchStockData(ticker, webContents);
     }
     else {

@@ -40,7 +40,6 @@ async function scrapCompanies(webContents: WebContents) {
     fs.writeFileSync(companiesListCachePath, JSON.stringify(companiesWithSymbolsWithTimestamp, null, 2));
 
     return companiesList;
-
   } catch (err) {
     printAndSendError(webContents, scrapCompanies.name, err);
   }
@@ -71,7 +70,6 @@ export async function getFreshCompaniesList(webContents: WebContents) {
     } else {
       return companiesList;
     }
-
   } catch (err) {
     if (isError(err) && 'code' in err && err.code === 'ENOENT') {
       printAndSendLog(webContents, getFreshCompaniesList.name, logs.companiesListCacheMissing);
