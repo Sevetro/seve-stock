@@ -5,12 +5,13 @@ import { WebContents } from 'electron';
 
 import { dataCacheDirname } from './constants.js';
 import { StockRecordCache } from './types.js';
-import { convertNativeDateToStooqDate, convertStringDateToStooqDate, timestampParser } from './utils.js';
+import { convertStringDateToStooqDate, timestampParser } from './utils.js';
 import { fetchingPeriodYears, staleStockDataMinutes } from './config.js';
 import { printAndSendError, printAndSendLog } from '../utils/message.js';
 import { errors } from '../shared-with-ui/errors.js';
 import { getErrorMsg, isError } from '../utils/error.js';
 import { logs } from '../shared-with-ui/logs.js';
+import { convertNativeDateToStooqDate } from '../shared-with-ui/date.js';
 
 function createStockDataObject(record: string): StockDataRecord {
   const recordData = record.split(',');

@@ -18,7 +18,7 @@ export async function getAvgPrice(ticker: string, stooqStartDate: string, webCon
       printAndSendLog(webContents, getAvgPrice.name, logs.earliestAvailableData(ticker, earliestAvailableData));
     }
 
-    return companyStockData.reduce((acc, { avg }) => acc + avg, 0) / companyStockData.length;
+    return Number((companyStockData.reduce((acc, { avg }) => acc + avg, 0) / companyStockData.length).toFixed(2));
   } catch (err) {
     printAndSendError(webContents, getAvgPrice.name, err);
   }

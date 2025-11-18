@@ -17,12 +17,14 @@ interface ComboboxOption {
 type ComboboxOptions = ComboboxOption[]
 
 interface ComboboxProps {
+  placeholder?: string
   options: ComboboxOptions
-  value: string;
+  value: string
   setValue: React.Dispatch<React.SetStateAction<string>>
+  searchPlaceholder?: string
 }
 
-export const Combobox = ({ options, value, setValue }: ComboboxProps) => {
+export const Combobox = ({ placeholder, options, value, setValue, searchPlaceholder }: ComboboxProps) => {
   const [open, setOpen] = useState(false);
   const [searchValue, setSearchValue] = useState('');
 
@@ -57,7 +59,7 @@ export const Combobox = ({ options, value, setValue }: ComboboxProps) => {
         }}
       >
         <RadixSelect.Trigger aria-label="Language" className="select">
-          <RadixSelect.Value placeholder="Select a language" />
+          <RadixSelect.Value placeholder={placeholder} />
           <RadixSelect.Icon className="select-icon">
             <ChevronDownIcon />
           </RadixSelect.Icon>
@@ -77,7 +79,7 @@ export const Combobox = ({ options, value, setValue }: ComboboxProps) => {
             </div>
             <AriaCombobox
               autoSelect
-              placeholder="Search languages"
+              placeholder={searchPlaceholder}
               className="combobox"
               onBlurCapture={(event) => {
                 event.preventDefault();

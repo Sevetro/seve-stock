@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { subDays } from 'date-fns';
 
 import { Combobox, Select } from '../../design-system';
 import { useCompaniesList } from '../../hooks/useCompaniesList';
@@ -6,7 +7,8 @@ import { CandleChart } from '../candle-chart/candle-chart';
 import { useCompanyStockData } from '../../hooks/useCompanyStockData';
 import { createCandlestickData } from '../candle-chart/candle-chart.utils';
 import type { SelectOptions } from '../../design-system/select';
-import { mainFrame } from './main-frame.module.scss';
+import { mainFrame, mainFrameControls } from './main-frame.module.scss';
+import { convertNativeDateToStooqDate } from '../../../electron/shared-with-ui/date';
 
 function createSelectOptions(companiesList: CompaniesList | undefined) {
   return companiesList?.map(({ company, ticker }) => ({ label: company, value: ticker })) ?? [];
@@ -21,30 +23,37 @@ const selectOptions: SelectOptions = [{ label: '1 day', value: '1' }, { label: '
 
 export const MainFrame = () => {
   const companiesList = useCompaniesList();
-  const [value, setValue] = useState('');
+  const [ticker, setTicker] = useState('');
+  const [avgPrice, setAvgPrice] = useState(0);
+  const [period, setPeriod] = useState('7')
 
-  // const [avgPrice, setAvgPrice] = useState(0);
+  const stooqStartDate = subDays(new Date(), Number(period))
 
-  const companyStockData = useCompanyStockData(value, '20241010');
+  const companyStockData = useCompanyStockData(ticker, convertNativeDateToStooqDate(stooqStartDate));
+
 
   async function handleButtonClick() {
-    try {
-      const price = await window.electron.getAvgPrice('pkn', '20051010');
-      console.log('price', price);
-    } catch (err) {
-      console.error(err);
-    }
+    setAvgPrice(await window.electron.getAvgPrice(ticker, convertNativeDateToStooqDate(stooqStartDate)) ?? 0);
   }
 
   return (
     <div className={mainFrame}>
-      <Combobox options={createSelectOptions(companiesList)} value={value} setValue={setValue} />
+      <div className={mainFrameControls}>
+        <Combobox
+          placeholder='Ticker'
+          options={createSelectOptions(companiesList)}
+          value={ticker}
+          setValue={setTicker}
+          searchPlaceholder='Search ticker...'
+        />
 
-      <Select options={selectOptions} />
+        <Select placeholder='Period' value={period} setValue={setPeriod} options={selectOptions} />
 
-      <button onClick={handleButtonClick}> dupa</button>
+        <button onClick={handleButtonClick}>Get average price</button>
+        <span>{avgPrice}</span>
+      </div>
 
-      {value !== '' && <CandleChart data={createCandlestickData(companyStockData ?? [])} />}
+      {ticker !== '' && <CandleChart data={createCandlestickData(companyStockData ?? [])} />}
 
     </div>
   );

@@ -12,11 +12,13 @@ export type SelectOptions = SelectOption[]
 
 interface SelectProps {
   placeholder?: string
+  value: string
+  setValue: React.Dispatch<React.SetStateAction<string>>
   options: SelectOption[]
 }
 
-export const Select = ({ placeholder, options }: SelectProps) => (
-  <RadixSelect.Root>
+export const Select = ({ placeholder, value, setValue, options }: SelectProps) => (
+  <RadixSelect.Root value={value} onValueChange={setValue}>
     <RadixSelect.Trigger className={selectTrigger}>
       <RadixSelect.Value placeholder={placeholder} />
       <RadixSelect.Icon>
