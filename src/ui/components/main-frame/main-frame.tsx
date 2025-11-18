@@ -34,7 +34,6 @@ export const MainFrame = () => {
     } catch (err) {
       console.error(err);
     }
-
   }
 
   return (

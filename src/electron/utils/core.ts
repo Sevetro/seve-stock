@@ -1,4 +1,4 @@
-import { ipcMain, WebFrameMain } from 'electron';
+import { ipcMain, WebContents, WebFrameMain } from 'electron';
 import { pathToFileURL } from 'url';
 
 import { getUIPath } from './path-resolver.js';
@@ -33,10 +33,10 @@ export function ipcMainHandle<Key extends keyof EventPayloadMap>(
   });
 }
 
-// export function ipcWebContentsSend<Key extends keyof EventPayloadMap>(
-//   key: Key,
-//   webContents: WebContents,
-//   payload: EventPayloadMap[Key]
-// ) {
-//   webContents.send(key, payload);
-// }
+export function webContentsSend<Key extends keyof EventPayloadMap>(
+  webContents: WebContents,
+  key: Key,
+  payload: EventPayloadMap[Key]
+) {
+  webContents.send(key, payload);
+}

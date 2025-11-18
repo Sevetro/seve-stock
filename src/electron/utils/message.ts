@@ -1,41 +1,29 @@
-import { errors } from '../shared-with-ui/errors.js';
+import { WebContents } from 'electron';
+
 import { getErrorMsg } from './error.js';
+import { webContentsSend } from './core.js';
+import { serializeMsg } from '../shared-with-ui/message.js';
 
-function serializeConsoleMsg(type: 'log' | 'error', msgFrom: string, msg: string) {
-  return `[${type.toUpperCase()}]:[${msgFrom}] ${msg}`;
-}
-function consoleLog(source: string, log: string) {
-  console.log(serializeConsoleMsg('log', source, log));
-}
-function consoleError(source: string, err: unknown) {
-  console.error(serializeConsoleMsg('error', source, getErrorMsg(err)));
-}
-function addPayloadMsg(payload: Payload<any>, msg: string) {
-  try {
-    if (payload === undefined || msg === undefined) {
-      throw new Error(errors.cantAddPayloadMsg);
-    }
-
-    if (payload.messages === undefined) payload.messages = [];
-    payload.messages.push(msg);
-
-  } catch (err) {
-    consoleError(addPayloadMsg.name, err);
-  }
-}
-function addPayloadLog(payload: Payload<any>, source: string, msg: string) {
-  addPayloadMsg(payload, serializeConsoleMsg('log', source, msg));
-}
-function addPayloadError(payload: Payload<any>, source: string, msg: string) {
-  addPayloadMsg(payload, serializeConsoleMsg('error', source, msg));
+function printMsg({ msg, source, type }: Message) {
+  console.log(serializeMsg({ msg, source, type }));
 }
 
-export function consoleErrorAndPayload(payload: Payload<any>, source: string, err: unknown) {
-  consoleError(source, err);
-  addPayloadError(payload, source, getErrorMsg(err));
+function sendMessage(webContents: WebContents, msg: Message) {
+  webContentsSend(webContents, 'message', msg);
 }
 
-export function consoleLogAndPayload(payload: Payload<any>, source: string, msg: string) {
-  consoleLog(source, msg);
-  addPayloadLog(payload, source, msg);
+export function printAndSendMsg(webContents: WebContents, { msg, source, type }: Message) {
+  if (type === 'log') printMsg({ type: 'log', source, msg });
+  else if (type === 'error') printMsg({ type: 'error', source, msg });
+  sendMessage(webContents, { msg, source, type });
+}
+
+export function printAndSendLog(webContents: WebContents, source: string, log: string) {
+  printMsg({ msg: log, source, type: 'log' });
+  sendMessage(webContents, { msg: log, source, type: 'log' });
+}
+
+export function printAndSendError(webContents: WebContents, source: string, err: unknown) {
+  printMsg({ msg: getErrorMsg(err), source, type: 'error' });
+  sendMessage(webContents, { msg: getErrorMsg(err), source, type: 'error' });
 }

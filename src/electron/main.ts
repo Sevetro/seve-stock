@@ -52,11 +52,9 @@ app.whenReady().then(async () => {
 
   mainWindow.webContents.openDevTools();
 
-  ipcMainHandle('getCompaniesList', getFreshCompaniesList);
+  ipcMainHandle('getCompaniesList', () => getFreshCompaniesList(mainWindow.webContents));
   ipcMainHandle('getCompanyStockData', getFreshStockData);
   ipcMainHandle('getAvgPrice', getAvgPrice);
-
-  //TODO: subscribe to logs
 
   mainWindow.on('closed', () => {
     app.quit();

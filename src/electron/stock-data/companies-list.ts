@@ -1,13 +1,14 @@
 import fs from 'fs';
 import path from 'path';
 import { differenceInDays } from 'date-fns';
+import { WebContents } from 'electron';
 
 import { dataCacheDirname } from './constants.js';
 import { CompaniesListCache } from './types.js';
 import { timestampParser } from './utils.js';
 import { staleCompaniesListDays } from './config.js';
 import { errors } from '../shared-with-ui/errors.js';
-import { consoleErrorAndPayload, consoleLogAndPayload } from '../utils/message.js';
+import { printAndSendError, printAndSendLog, printAndSendMsg } from '../utils/message.js';
 import { getErrorMsg, isError } from '../utils/error.js';
 import { logs } from '../shared-with-ui/logs.js';
 
@@ -16,7 +17,7 @@ const companyDataRegex = /data-rowkey="GPW:([A-Z]+)[\s\S]*?https:\/\/s3-symbol-l
 const redundantSuffixRegex = /\(?\b(?:Sp[oó]lka\s+Akcyjna|S\s*\.?\s*A\.?)\b\.?\)?/gi;
 const pageWithCompaniesList = 'https://pl.tradingview.com/markets/stocks-poland/market-movers-large-cap/';
 
-async function scrapCompanies(payload: Payload<any>) {
+async function scrapCompanies(webContents: WebContents) {
   try {
     const res = await fetch(pageWithCompaniesList);
     const html = await res.text();
@@ -41,12 +42,11 @@ async function scrapCompanies(payload: Payload<any>) {
     return companiesList;
 
   } catch (err) {
-    consoleErrorAndPayload(payload, scrapCompanies.name, err);
+    printAndSendError(webContents, scrapCompanies.name, err);
   }
 }
 
-export async function getFreshCompaniesList() {
-  const payload: Payload<CompaniesList> = {};
+export async function getFreshCompaniesList(webContents: WebContents) {
 
   try {
     const rawData = fs.readFileSync(companiesListCachePath, 'utf-8');
@@ -58,32 +58,30 @@ export async function getFreshCompaniesList() {
     const daysSinceUpdate = differenceInDays(new Date(), timestamp);
 
     if (daysSinceUpdate >= staleCompaniesListDays) {
-      consoleLogAndPayload(payload, getFreshCompaniesList.name, logs.companiesListStale);
-      const freshCompaniesList = await scrapCompanies(payload);
+      printAndSendLog(webContents, getFreshCompaniesList.name, logs.companiesListStale);
+      const freshCompaniesList = await scrapCompanies(webContents);
 
       if (freshCompaniesList === undefined || freshCompaniesList.length === 0) {
-        payload.data = companiesList;
-        throw new Error(errors.usingStaleCompaniesList);
+        printAndSendMsg(webContents, { msg: errors.usingStaleCompaniesList, source: getFreshCompaniesList.name, type: 'error' });
+        return companiesList;
       } else {
-        payload.data = freshCompaniesList;
+        return freshCompaniesList;
       }
 
     } else {
-      payload.data = companiesList;
+      return companiesList;
     }
 
   } catch (err) {
     if (isError(err) && 'code' in err && err.code === 'ENOENT') {
-      consoleLogAndPayload(payload, getFreshCompaniesList.name, logs.companiesListCacheMissing);
-      payload.data = await scrapCompanies(payload);
+      printAndSendLog(webContents, getFreshCompaniesList.name, logs.companiesListCacheMissing);
+      return await scrapCompanies(webContents);
     } else if (getErrorMsg(err) === errors.companiesListCacheEmpty) {
-      consoleErrorAndPayload(payload, getFreshCompaniesList.name, err);
-      payload.data = await scrapCompanies(payload);
+      printAndSendError(webContents, getFreshCompaniesList.name, err);
+      return await scrapCompanies(webContents);
     }
     else {
-      consoleErrorAndPayload(payload, getFreshCompaniesList.name, err);
+      printAndSendError(webContents, getFreshCompaniesList.name, err);
     }
   }
-
-  return payload;
 }

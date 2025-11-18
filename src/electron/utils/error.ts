@@ -15,5 +15,4 @@ export function getErrorMsg(err: unknown) {
   } else {
     return errors.unknownError;
   }
-
 }
