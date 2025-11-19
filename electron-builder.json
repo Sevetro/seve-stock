@@ -1,5 +1,5 @@
 {
-  "appId": "com.lukasz-gil.resource-monitor",
+  "appId": "com.lukasz-gil.seve-stock",
   "files": [
     "dist-electron",
     "dist-react"
