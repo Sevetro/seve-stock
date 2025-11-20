@@ -1,2 +1,2 @@
 export { Combobox } from './combobox';
-export { Select } from './select';
+export { Select, type SelectOptions } from './select';

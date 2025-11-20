@@ -9,8 +9,8 @@ import { getAvgPrice } from './stock-data/formulas.js';
 
 app.whenReady().then(async () => {
   const mainWindow = new BrowserWindow({
-    width: 1400,
-    height: 800,
+    width: 1000,
+    height: 700,
     webPreferences: {
       preload: getPreloadPath()
     }
@@ -22,7 +22,7 @@ app.whenReady().then(async () => {
     mainWindow.loadFile(getUIPath());
   }
 
-  mainWindow.webContents.openDevTools();
+  // mainWindow.webContents.openDevTools();
 
   const { webContents } = mainWindow;
   ipcMainHandle('getCompaniesList', () => getFreshCompaniesList(webContents));

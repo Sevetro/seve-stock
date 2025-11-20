@@ -1,6 +1,6 @@
 import { useEffect } from 'react';
-import './App.css';
 
+import './App.css';
 import { MainFrame } from './components/main-frame';
 import { serializeMsg } from '../electron/shared-with-ui/message';
 
