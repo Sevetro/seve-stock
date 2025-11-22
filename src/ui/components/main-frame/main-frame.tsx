@@ -2,44 +2,44 @@ import { useState } from 'react';
 import { subDays } from 'date-fns';
 
 import { Combobox, Select } from '../../design-system';
-import { useCompaniesList } from '../../hooks/useCompaniesList';
+import { useCompaniesList, useCompanyStockData, useCurrentPrice } from '../../hooks';
 import { CandleChart } from '../candle-chart/candle-chart';
-import { useCompanyStockData } from '../../hooks/useCompanyStockData';
 import { createCandlestickData } from '../candle-chart/candle-chart.utils';
-import { functionsCard, mainFrame, mainFrameControls, tickerCard } from './main-frame.module.scss';
+import {
+  avgPriceContainer,
+  currPriceContainer,
+  functionsCard, mainFrame, mainFrameControls, pricesContainer, tickerCard
+} from './main-frame.module.scss';
 import { convertNativeDateToStooqDate } from '../../../electron/shared-with-ui/date';
-import { periodSelectOptions } from './main-frame.utils';
-
-function createSelectOptions(companiesList: CompaniesList | undefined) {
-  return companiesList?.map(({ company, ticker }) => ({ label: company, value: ticker })) ?? [];
-}
+import { getAvgPrice, getTickersSelectOptions, periodSelectOptions } from './main-frame.utils';
+import { formatPrice } from '../../utils/currency';
 
 export const MainFrame = () => {
   const companiesList = useCompaniesList();
-  const [ticker, setTicker] = useState('PKN');
-  const [avgPrice, setAvgPrice] = useState(0);
+  const [symbol, setSymbol] = useState('PKN');
   const [period, setPeriod] = useState('30');
+  const stooqStartDate = convertNativeDateToStooqDate(subDays(new Date(), Number(period)));
+  const companyStockData = useCompanyStockData(symbol, stooqStartDate);
+  const currentPrice = useCurrentPrice(symbol);
+  const [discountList, setDiscountList] = useState<StockDiscount[]>();
 
-  const stooqStartDate = subDays(new Date(), Number(period));
-
-  const companyStockData = useCompanyStockData(ticker, convertNativeDateToStooqDate(stooqStartDate));
-
-  async function handleButtonClick() {
-    setAvgPrice(await window.electron.getAvgPrice(ticker, convertNativeDateToStooqDate(stooqStartDate)) ?? 0);
+  async function getDiscountList() {
+    setDiscountList(await window.electron.getDiscountList(stooqStartDate, 10));
   }
 
   return (
-    <div className={mainFrame}>
-      <div className={tickerCard}>
-        <div className={mainFrameControls}>
+    <main className={mainFrame}>
+      <section className={tickerCard}>
+        <header className={mainFrameControls}>
           <Combobox
             placeholder='Ticker'
-            options={createSelectOptions(companiesList)}
-            value={ticker}
-            setValue={setTicker}
+            options={getTickersSelectOptions(companiesList)}
+            value={symbol}
+            setValue={setSymbol}
             searchPlaceholder='Search ticker...'
             width={100}
           />
+
           <Select
             placeholder='Period'
             options={periodSelectOptions}
@@ -47,14 +47,29 @@ export const MainFrame = () => {
             value={period}
             width={100}
           />
+
+          <output className={pricesContainer}>
+            <span className={currPriceContainer}>curr: {formatPrice(currentPrice)}</span>
+            <span className={avgPriceContainer}>avg: {formatPrice(getAvgPrice(companyStockData))}</span>
+          </output>
+        </header>
+
+        {symbol !== '' && <CandleChart data={createCandlestickData(companyStockData ?? [])} />}
+      </section>
+
+      <aside className={functionsCard}>
+
+        <button onClick={getDiscountList}>find best discount</button>
+        <div>
+          {discountList?.map(stockDiscount => (
+            <div>
+              <span>{stockDiscount.symbol}</span>
+              <span>{stockDiscount.discount}</span>
+            </div>
+          ))}
         </div>
-        {ticker !== '' && <CandleChart data={createCandlestickData(companyStockData ?? [])} />}
-      </div>
+      </aside>
 
-      <div className={functionsCard}>
-        <button>elo</button>
-      </div>
-
-    </div>
+    </main>
   );
 }; 

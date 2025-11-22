@@ -50,6 +50,7 @@ button {
   padding: 0 25px;
   position: relative;
   user-select: none;
+  outline: none;
 
   &[data-highlighted] {
     @include animateGlow($greenNeonShadowSmall, $greenOutline, 0);

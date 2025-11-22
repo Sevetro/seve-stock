@@ -13,6 +13,8 @@ import { getErrorMsg, isError } from '../utils/error.js';
 import { logs } from '../shared-with-ui/logs.js';
 import { convertNativeDateToStooqDate } from '../shared-with-ui/date.js';
 
+const historicCachePath = path.join(dataCacheDirname, 'historic');
+
 function createStockDataObject(record: string): StockDataRecord {
   const recordData = record.split(',');
   const open = parseFloat(recordData[1]);
@@ -31,19 +33,19 @@ function createStockDataObject(record: string): StockDataRecord {
   };
 }
 
-async function fetchStockData(ticker: string, webContents: WebContents) {
+async function fetchHistoricStockData(symbol: string, webContents: WebContents) {
   const today = convertNativeDateToStooqDate(new Date());
   const startDate = convertNativeDateToStooqDate(subYears(new Date(), fetchingPeriodYears));
-  const url = `https://stooq.com/q/d/l/?s=${ticker}&d1=${startDate}&d2=${today}&i=d`;
+  const url = `https://stooq.com/q/d/l/?s=${symbol}&d1=${startDate}&d2=${today}&i=d`;
 
   try {
     const res = await fetch(url);
-    if (!res.ok) throw new Error(`HTTP ${res.status} for ${ticker}`);
+    if (!res.ok) throw new Error(errors.responseNotOk(res.status, symbol));
 
     const data = await res.text();
-    if (!data || data.trim().length === 0) throw new Error(errors.emptyStockDataResponse(ticker));
-    if (data === 'Exceeded the daily hits limit') throw new Error(errors.exceededDailyHitsLimit(ticker));
-    if (data === 'No data') throw new Error(errors.noAvailableStockData(ticker));
+    if (!data || data.trim().length === 0) throw new Error(errors.emptyStockDataResponse(symbol));
+    if (data === 'Exceeded the daily hits limit') throw new Error(errors.exceededDailyHitsLimit(symbol));
+    if (data === 'No data') throw new Error(errors.noAvailableStockData(symbol));
 
     const records = data.trim().split(/\r?\n/);
     records.shift();
@@ -55,36 +57,37 @@ async function fetchStockData(ticker: string, webContents: WebContents) {
       stockData
     };
 
-    const filePath = path.join(dataCacheDirname, `${ticker}.json`);
-    fs.mkdirSync(dataCacheDirname, { recursive: true });
+    const filePath = path.join(historicCachePath, `${symbol}.json`);
+    fs.mkdirSync(historicCachePath, { recursive: true });
     fs.writeFileSync(filePath, JSON.stringify(stockDataWithTimestamp, null, 2));
 
     return stockData;
   } catch (err) {
-    printAndSendError(webContents, fetchStockData.name, err);
+    console.log(err);
+    printAndSendError(webContents, fetchHistoricStockData.name, err);
   }
 }
 
-export async function getFreshStockData(ticker: string, stooqStartDate: string, webContents: WebContents) {
+export async function getHistoricStockData(symbol: string, stooqStartDate: string, webContents: WebContents) {
   const endDate = convertNativeDateToStooqDate(new Date());
-  const filePath = path.join(dataCacheDirname, `${ticker}.json`);
   let finalStockData: CompanyStockData | undefined;
+  const filePath = path.join(historicCachePath, `${symbol}.json`);
 
   try {
     const rawData = fs.readFileSync(filePath, 'utf-8');
     const parsedData: StockRecordCache = JSON.parse(rawData, timestampParser);
     const { timestamp, stockData } = parsedData;
 
-    if (stockData.length === 0) throw new Error(logs.emptyTickerCache(ticker));
+    if (stockData.length === 0) throw new Error(logs.emptyTickerCache(symbol));
 
     const minutesSinceUpdate = differenceInMinutes(new Date(), timestamp);
 
     if (minutesSinceUpdate >= staleStockDataMinutes) {
-      printAndSendLog(webContents, getFreshStockData.name, logs.stockDataStale(ticker));
-      const freshStockData = await fetchStockData(ticker, webContents);
+      printAndSendLog(webContents, getHistoricStockData.name, logs.stockDataStale(symbol));
+      const freshStockData = await fetchHistoricStockData(symbol, webContents);
 
       if (freshStockData === undefined || freshStockData.length === 0) {
-        printAndSendLog(webContents, getFreshStockData.name, errors.freshStockDataUnavailable(ticker));
+        printAndSendLog(webContents, getHistoricStockData.name, errors.freshStockDataUnavailable(symbol));
         finalStockData = stockData;
       } else {
         finalStockData = freshStockData;
@@ -95,15 +98,15 @@ export async function getFreshStockData(ticker: string, stooqStartDate: string, 
     }
   } catch (err) {
     if (isError(err) && 'code' in err && err.code === 'ENOENT') {
-      printAndSendLog(webContents, getFreshStockData.name, logs.tickerCacheNotFound(ticker));
-      finalStockData = await fetchStockData(ticker, webContents);
+      printAndSendLog(webContents, getHistoricStockData.name, logs.tickerCacheNotFound(symbol));
+      finalStockData = await fetchHistoricStockData(symbol, webContents);
     }
-    else if (getErrorMsg(err) === logs.emptyTickerCache(ticker)) {
-      printAndSendLog(webContents, getFreshStockData.name, logs.emptyTickerCache(ticker));
-      finalStockData = await fetchStockData(ticker, webContents);
+    else if (getErrorMsg(err) === logs.emptyTickerCache(symbol)) {
+      printAndSendLog(webContents, getHistoricStockData.name, logs.emptyTickerCache(symbol));
+      finalStockData = await fetchHistoricStockData(symbol, webContents);
     }
     else {
-      printAndSendError(webContents, getFreshStockData.name, err);
+      printAndSendError(webContents, getHistoricStockData.name, err);
     }
   }
 

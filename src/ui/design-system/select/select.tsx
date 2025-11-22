@@ -1,10 +1,10 @@
+import { useState } from 'react';
 import { Select as RadixSelect } from 'radix-ui';
 import { CheckIcon, ChevronDownIcon } from '@radix-ui/react-icons';
 
 import {
   selectContent, selectIcon, selectItem, selectItemIndicator, trigger, triggerOpen, selectViewport
 } from './select.module.scss';
-import { useState } from 'react';
 
 interface SelectOption {
   value: string

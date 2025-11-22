@@ -1,27 +1,30 @@
 interface Window {
   electron: {
-    getCompaniesList: () => Promise<CompaniesList | undefined>
-    getCompanyStockData: (ticker: string, stooqStartDate: string) => Promise<CompanyStockData | undefined>
-    getAvgPrice: (ticker: string, stooqStartDate: string) => Promise<number | undefined>
+    getTickers: () => Promise<Tickers | undefined>
+    getCompanyStockData: (symbol: string, stooqStartDate: string) => Promise<CompanyStockData | undefined>
+    getCurrentPrice: (symbol: string) => Promise<number | undefined>
+    getDiscountList: (stooqStartDate: string, count: number) => Promise<StockDiscountList | undefined>
+
     subscribeToMessages: (callback: (msg: Message) => void) => UnsubscribeFn
   };
 }
 
-type EventPayloadMap = {
-  getCompaniesList: Promise<CompaniesList | undefined>
-  getCompanyStockData: Promise<CompanyStockData | undefined>
-  getAvgPrice: Promise<number | undefined>
-  message: Message
+interface EventMap {
+  getTickers: { args: [], payload: Promise<Tickers | undefined> }
+  getCompanyStockData: { args: [symbol: string, stooqStartDate: string], payload: Promise<CompanyStockData | undefined> }
+  getCurrentPrice: { args: [symbol: string], payload: Promise<number | undefined> }
+  getDiscountList: { args: [stooqStartDate: string, count: number], payload: Promise<StockDiscountList | undefined> }
+
+  message: { args: [], payload: Message }
 }
 
 type UnsubscribeFn = () => void;
 
-interface CompanyWithSymbol {
-  ticker: string
-  company: string
-  fullname: string
+interface Ticker {
+  symbol: string
+  name: string
 }
-type CompaniesList = CompanyWithSymbol[]
+type Tickers = Ticker[]
 
 interface StockDataRecord {
   date: string;
@@ -38,3 +41,9 @@ interface Message {
   source: string
   msg: string
 }
+
+interface StockDiscount {
+  symbol: string;
+  discount: number;
+}
+type StockDiscountList = StockDiscount[]
