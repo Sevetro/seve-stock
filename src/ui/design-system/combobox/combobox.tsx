@@ -1,4 +1,6 @@
-import { startTransition, useEffect, useRef, useState } from 'react';
+import {
+  memo, startTransition, useEffect, useRef, useState
+} from 'react';
 import {
   Combobox as AriaCombobox,
   ComboboxItem as AriaComboboxItem,
@@ -32,8 +34,8 @@ interface ComboboxProps {
   contentAria?: string
 }
 
-export const Combobox = ({ placeholder, options, value, setValue, width, searchPlaceholder, triggerAria,
-  contentAria }: ComboboxProps) => {
+export const Combobox = memo(({ placeholder, options, value, setValue, width,
+  searchPlaceholder, triggerAria, contentAria }: ComboboxProps) => {
   const [open, setOpen] = useState(false);
   const [searchValue, setSearchValue] = useState('');
   const listRef = useRef<HTMLDivElement>(null);
@@ -136,4 +138,4 @@ export const Combobox = ({ placeholder, options, value, setValue, width, searchP
       </AriaComboboxProvider>
     </RadixSelect.Root>
   );
-};
+});

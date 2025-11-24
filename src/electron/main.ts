@@ -5,7 +5,7 @@ import { ipcMainHandle, isDev } from './utils/core.js';
 import { getPreloadPath, getUIPath } from './utils/path-resolver.js';
 import { getTickers } from './stock-data/tickers.js';
 import { getHistoricStockData } from './stock-data/historic-stock-data.js';
-import { getDiscountList } from './stock-data/formulas.js';
+import { getCheapStocks } from './stock-data/formulas.js';
 import { getCurrentPrice } from './stock-data/current-price.js';
 
 const yahooFinance = new YahooFinance({ suppressNotices: ['yahooSurvey'] });
@@ -13,8 +13,8 @@ export type YahooFinanceType = typeof yahooFinance;
 
 app.whenReady().then(async () => {
   const mainWindow = new BrowserWindow({
-    width: 1000,
-    height: 700,
+    width: 850,
+    height: 600,
     webPreferences: {
       preload: getPreloadPath()
     }
@@ -30,9 +30,12 @@ app.whenReady().then(async () => {
 
   const { webContents } = mainWindow;
   ipcMainHandle('getTickers', () => getTickers(webContents, yahooFinance));
-  ipcMainHandle('getCompanyStockData', (symbol, stooqStartDate) => getHistoricStockData(symbol, stooqStartDate, webContents));
-  ipcMainHandle('getCurrentPrice', (symbol) => getCurrentPrice(symbol, yahooFinance, webContents));
-  ipcMainHandle('getDiscountList', (stooqStartDate: string, count: number) => getDiscountList(stooqStartDate, count, webContents, yahooFinance));
+  ipcMainHandle('getCompanyStockData', (symbol, stooqStartDate) =>
+    getHistoricStockData(symbol, stooqStartDate, webContents));
+  ipcMainHandle('getCurrentPrice', (symbol) =>
+    getCurrentPrice(symbol, yahooFinance, webContents));
+  ipcMainHandle('getCheapStocks', (stooqStartDate: string, count: number) =>
+    getCheapStocks(stooqStartDate, count, webContents, yahooFinance));
 
   mainWindow.on('closed', () => {
     app.quit();

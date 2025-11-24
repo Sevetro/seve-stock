@@ -7,8 +7,8 @@ export const periodSelectOptions: SelectOptions = [{ label: '1 day', value: '1' 
 { label: '5 years', value: '1826' }, { label: '10 years', value: '3652' }
 ];
 
-export function getTickersSelectOptions(companiesList: Tickers | undefined) {
-  return companiesList?.map(({ name, symbol }) => ({ label: name, value: symbol })) ?? [];
+export function getTickersSelectOptions(tickers: Tickers | undefined) {
+  return tickers?.map(({ name, symbol }) => ({ label: name, value: symbol })) ?? [];
 }
 
 export function getAvgPrice(stockData: CompanyStockData | undefined) {

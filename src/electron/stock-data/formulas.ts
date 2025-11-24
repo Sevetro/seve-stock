@@ -27,13 +27,13 @@ export async function getAvgPrice(symbol: string, stooqStartDate: string, webCon
   }
 }
 
-export async function getDiscountList(
+export async function getCheapStocks(
   stooqStartDate: string, count: number, webContents: WebContents, yahooFinance: YahooFinanceType
 ) {
   try {
-    const symbols = (await getTickers(webContents, yahooFinance))?.map(ticker => ticker.symbol);
-
-    if (symbols === undefined || symbols.length === 0) throw new Error('dupa'); //TODO
+    const tickers = await getTickers(webContents, yahooFinance);
+    if (tickers === undefined || tickers.length === 0) throw new Error('dupa'); //TODO
+    const symbols = tickers.map(ticker => ticker.symbol);
 
     const currentPrices: Record<string, number | undefined> = {};
     await Promise.all(
@@ -47,19 +47,19 @@ export async function getDiscountList(
       avgPrices[symbol] = await getAvgPrice(symbol, stooqStartDate, webContents);
     }
 
-    const discountList = symbols.map(symbol => {
+    const cheapStocks = tickers.map(({ symbol, name }) => {
       if (currentPrices[symbol] === undefined) throw new Error(errors.currentPriceUndefined(symbol));
       if (avgPrices[symbol] === undefined) throw new Error(errors.avgPriceUndefined(symbol));
 
       return {
         symbol,
+        name,
         discount: currentPrices[symbol] / avgPrices[symbol]
       };
     });
 
-    return discountList.sort((a, b) => a.discount - b.discount).slice(0, count);
+    return cheapStocks.sort((a, b) => a.discount - b.discount).slice(0, count);
   } catch (err) {
-    printAndSendError(webContents, getDiscountList.name, err);
+    printAndSendError(webContents, getCheapStocks.name, err);
   }
-
 }

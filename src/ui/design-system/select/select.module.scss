@@ -2,9 +2,6 @@
 @use '../scss/mixins' as *;
 @use '../scss/shadows' as *;
 
-button {
-  all: unset;
-}
 
 .trigger {
   display: inline-flex;
@@ -17,14 +14,10 @@ button {
   padding: 0 10px;
 
   @include animateGlow($greenNeonShadow, $greenOutline);
-}
 
-.triggerOpen {
-  box-shadow: $greenNeonShadow;
-}
-
-.selectTrigger[data-placeholder] {
-  color: red;
+  &[data-state="open"] {
+    box-shadow: $greenNeonShadow;
+  }
 }
 
 .selectIcon {
