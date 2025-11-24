@@ -1,8 +1,11 @@
 export const logs = {
-  companiesListCacheMissing: 'No companies list cache file found, trying to scrap...',
-  companiesListStale: 'Companies list is stale, trying to scrap...',
-  emptyTickerCache: (ticker: string) => `Cache file for ${ticker} is empty, trying to fetch...`,
-  tickerCacheNotFound: (ticker: string) => `Cache file for ${ticker} not found, trying to fetch...`,
-  stockDataStale: (ticker: string) => `Stock data for ${ticker} is stale, trying to fetch...`,
-  earliestAvailableData: (ticker: string, earliestAvailableData: string) => `Earliest available data for ${ticker} is ${earliestAvailableData}.`
+  tickersCacheMissing: 'No tickers cache file found, trying to scrap...',
+  tickersStale: 'Tickers are stale, trying to scrap...',
+  emptyTickerCache: (symbol: string) => `Cache file for ${symbol} is empty, trying to fetch...`,
+  tickerCacheNotFound: (symbol: string) => `Cache file for ${symbol} not found, trying to fetch...`,
+  stockDataStale: (symbol: string) => `Stock data for ${symbol} is stale, trying to fetch...`,
+  earliestAvailableData: (symbol: string, earliestAvailableData: string) => `Earliest available data for ${symbol} is ${earliestAvailableData}.`,
+  quoteCacheNotFound: (symbol: string) => `Couldn't find quote cache file for ${symbol}.`,
+  invalidQuotePrice: (symbol: string) => `Invalid quote price for ${symbol}.`,
+  staleQuote: (symbol: string) => `${symbol} quote is stale, trying to fetch...`
 } as const; 

@@ -1,4 +1,7 @@
 import {
+  memo, startTransition, useEffect, useRef, useState
+} from 'react';
+import {
   Combobox as AriaCombobox,
   ComboboxItem as AriaComboboxItem,
   ComboboxList as AriaComboboxList,
@@ -6,8 +9,12 @@ import {
 } from '@ariakit/react';
 import { Select as RadixSelect } from 'radix-ui';
 import { matchSorter } from 'match-sorter';
-import { startTransition, useState } from 'react';
-import { CheckIcon, ChevronDownIcon, LoopIcon } from '@radix-ui/react-icons';
+import { CheckIcon, ChevronDownIcon, MagnifyingGlassIcon } from '@radix-ui/react-icons';
+
+import {
+  combobox, comboboxIcon, comboboxWrapper, item, itemIndicator, listbox, popover, trigger,
+  triggerIcon, triggerOpen
+} from './combobox.module.scss';
 
 interface ComboboxOption {
   value: string;
@@ -22,11 +29,16 @@ interface ComboboxProps {
   value: string
   setValue: React.Dispatch<React.SetStateAction<string>>
   searchPlaceholder?: string
+  width?: number;
+  triggerAria?: string
+  contentAria?: string
 }
 
-export const Combobox = ({ placeholder, options, value, setValue, searchPlaceholder }: ComboboxProps) => {
+export const Combobox = memo(({ placeholder, options, value, setValue, width,
+  searchPlaceholder, triggerAria, contentAria }: ComboboxProps) => {
   const [open, setOpen] = useState(false);
   const [searchValue, setSearchValue] = useState('');
+  const listRef = useRef<HTMLDivElement>(null);
 
   const matches = () => {
     if (!searchValue) return options;
@@ -39,6 +51,20 @@ export const Combobox = ({ placeholder, options, value, setValue, searchPlacehol
     }
     return matches;
   };
+
+  useEffect(() => {
+    if (open) {
+      requestAnimationFrame(() => {
+        const list = listRef.current;
+        if (!list) return;
+
+        const active = list.querySelector('[data-highlighted]');
+        if (active instanceof HTMLElement) {
+          active.scrollIntoView({ block: 'center', behavior: 'auto' });
+        }
+      });
+    }
+  }, [open]);
 
   return (
     <RadixSelect.Root
@@ -58,29 +84,32 @@ export const Combobox = ({ placeholder, options, value, setValue, searchPlacehol
           });
         }}
       >
-        <RadixSelect.Trigger aria-label="Language" className="select">
+        <RadixSelect.Trigger
+          className={`${trigger} ${open ? triggerOpen : ''}`}
+          style={{ width: width ?? 'auto' }}
+          aria-label={triggerAria}
+        >
           <RadixSelect.Value placeholder={placeholder} />
-          <RadixSelect.Icon className="select-icon">
+          <RadixSelect.Icon className={triggerIcon}>
             <ChevronDownIcon />
           </RadixSelect.Icon>
         </RadixSelect.Trigger>
 
         <RadixSelect.Content
           role="dialog"
-          aria-label="Languages"
+          aria-label={contentAria}
           position="popper"
-          className="popover"
+          className={popover}
           sideOffset={4}
-          alignOffset={-16}
         >
-          <div className="combobox-wrapper">
-            <div className="combobox-icon">
-              <LoopIcon />
+          <div className={comboboxWrapper}>
+            <div className={comboboxIcon}>
+              <MagnifyingGlassIcon />
             </div>
             <AriaCombobox
               autoSelect
               placeholder={searchPlaceholder}
-              className="combobox"
+              className={combobox}
               onBlurCapture={(event) => {
                 event.preventDefault();
                 event.stopPropagation();
@@ -88,19 +117,19 @@ export const Combobox = ({ placeholder, options, value, setValue, searchPlacehol
             />
           </div>
 
-          <AriaComboboxList className="listbox">
+          <AriaComboboxList className={listbox} ref={listRef}>
             {matches().map(({ label, value }) => (
               <RadixSelect.Item
                 key={value}
                 value={value}
                 asChild
-                className="item"
+                className={item}
               >
                 <AriaComboboxItem>
-                  <RadixSelect.ItemText>{label}</RadixSelect.ItemText>
-                  <RadixSelect.ItemIndicator className="item-indicator">
+                  <RadixSelect.ItemIndicator className={itemIndicator}>
                     <CheckIcon />
                   </RadixSelect.ItemIndicator>
+                  <RadixSelect.ItemText>{label}</RadixSelect.ItemText>
                 </AriaComboboxItem>
               </RadixSelect.Item>
             ))}
@@ -109,4 +138,4 @@ export const Combobox = ({ placeholder, options, value, setValue, searchPlacehol
       </AriaComboboxProvider>
     </RadixSelect.Root>
   );
-};
+});

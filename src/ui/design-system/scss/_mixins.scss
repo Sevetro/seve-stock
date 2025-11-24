@@ -1,0 +1,13 @@
+@mixin animateGlow($hover, $focus: null, $duration: 0.3s, $timing: ease) {
+  transition: box-shadow $duration $timing;
+
+  @if $focus !=null {
+    &:focus {
+      box-shadow: $focus
+    }
+  }
+
+  &:hover {
+    box-shadow: $hover;
+  }
+}

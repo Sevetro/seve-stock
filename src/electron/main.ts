@@ -1,16 +1,20 @@
 import { app, BrowserWindow } from 'electron';
+import YahooFinance from 'yahoo-finance2';
 
 import { ipcMainHandle, isDev } from './utils/core.js';
 import { getPreloadPath, getUIPath } from './utils/path-resolver.js';
-import { prepareData } from './stock-data/prepare-data.js';
-import { getFreshCompaniesList } from './stock-data/companies-list.js';
-import { getFreshStockData } from './stock-data/stock-data.js';
-import { getAvgPrice } from './stock-data/formulas.js';
+import { getTickers } from './stock-data/tickers.js';
+import { getHistoricStockData } from './stock-data/historic-stock-data.js';
+import { getCheapStocks } from './stock-data/formulas.js';
+import { getCurrentPrice } from './stock-data/current-price.js';
+
+const yahooFinance = new YahooFinance({ suppressNotices: ['yahooSurvey'] });
+export type YahooFinanceType = typeof yahooFinance;
 
 app.whenReady().then(async () => {
   const mainWindow = new BrowserWindow({
-    width: 1400,
-    height: 800,
+    width: 850,
+    height: 600,
     webPreferences: {
       preload: getPreloadPath()
     }
@@ -22,12 +26,16 @@ app.whenReady().then(async () => {
     mainWindow.loadFile(getUIPath());
   }
 
-  mainWindow.webContents.openDevTools();
+  // mainWindow.webContents.openDevTools();
 
   const { webContents } = mainWindow;
-  ipcMainHandle('getCompaniesList', () => getFreshCompaniesList(webContents));
-  ipcMainHandle('getCompanyStockData', (ticker, stooqStartDate) => getFreshStockData(ticker, stooqStartDate, webContents));
-  ipcMainHandle('getAvgPrice', (ticker, stooqStartDate) => getAvgPrice(ticker, stooqStartDate, webContents));
+  ipcMainHandle('getTickers', () => getTickers(webContents, yahooFinance));
+  ipcMainHandle('getCompanyStockData', (symbol, stooqStartDate) =>
+    getHistoricStockData(symbol, stooqStartDate, webContents));
+  ipcMainHandle('getCurrentPrice', (symbol) =>
+    getCurrentPrice(symbol, yahooFinance, webContents));
+  ipcMainHandle('getCheapStocks', (stooqStartDate: string, count: number) =>
+    getCheapStocks(stooqStartDate, count, webContents, yahooFinance));
 
   mainWindow.on('closed', () => {
     app.quit();

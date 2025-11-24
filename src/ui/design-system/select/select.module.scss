@@ -1,44 +1,57 @@
-.selectContent {
-  padding: 10px;
-  background-color: rgba(10, 10, 10, 0.8);
-  border-radius: 6px;
-  box-shadow:
-    0px 10px 38px -10px rgba(22, 23, 24, 0.35),
-    0px 10px 20px -15px rgba(22, 23, 24, 0.2);
-}
+@use '../scss/colors' as *;
+@use '../scss/mixins' as *;
+@use '../scss/shadows' as *;
 
-.selectTrigger {
+
+.trigger {
   display: inline-flex;
   align-items: center;
-  justify-content: center;
+  justify-content: space-between;
+  border: 1px solid $border;
   border-radius: 4px;
-  padding: 0 15px;
-  font-size: 13px;
-  line-height: 1;
-  height: 35px;
-  gap: 5px;
-  background-color: white;
-  color: violet;
-  box-shadow: 0 2px 10px black;
+  background-color: $surface;
+  color: $textPrimary;
+  padding: 0 10px;
+
+  @include animateGlow($greenNeonShadow, $greenOutline);
+
+  &[data-state="open"] {
+    box-shadow: $greenNeonShadow;
+  }
 }
 
+.selectIcon {
+  color: $textPrimary;
+}
+
+.selectContent {
+  z-index: 1;
+  background-color: $surface;
+  border: 1px solid $border;
+  border-radius: 6px;
+}
+
+.selectViewport {
+  padding: 5px 0;
+}
 
 .selectItem {
-  font-size: 13px;
-  line-height: 1;
-  color: violet;
-  border-radius: 3px;
+  color: $textPrimary;
   display: flex;
   align-items: center;
-  height: 25px;
-  padding: 0 35px 0 25px;
+  height: 30px;
+  padding: 0 25px;
   position: relative;
   user-select: none;
+  outline: none;
 
   &[data-highlighted] {
-    outline: none;
-    background-color: rgba(11, 32, 52, 0.9);
-
-    color: rgb(210, 227, 255);
+    @include animateGlow($greenNeonShadowSmall, $greenOutline, 0);
   }
+}
+
+.selectItemIndicator {
+  position: absolute;
+  left: 6px;
+  color: $green;
 }

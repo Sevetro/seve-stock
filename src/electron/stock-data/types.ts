@@ -3,9 +3,9 @@ export interface StockRecordCache {
   stockData: CompanyStockData
 }
 
-export interface CompaniesListCache {
+export interface TickersCache {
   timestamp: Date
-  companiesList: CompaniesList
+  tickers: Tickers
 }
 
 interface CompanyWithStockData {
@@ -13,5 +13,9 @@ interface CompanyWithStockData {
   fullname: string
   stockData: CompanyStockData
 }
-
 export type PreparedData = Record<string, CompanyWithStockData>
+
+export interface StockQuoteCache {
+  timestamp: Date
+  price: number
+}

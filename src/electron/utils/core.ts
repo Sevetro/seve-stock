@@ -17,11 +17,11 @@ function validateEventFrame(frame: WebFrameMain) {
   }
 }
 
-export function ipcMainHandle<Key extends keyof EventPayloadMap>(
+export function ipcMainHandle<Key extends keyof EventMap>(
   key: Key,
-  handler: (...args: any[]) => EventPayloadMap[Key]
+  handler: (...args: EventMap[Key]['args']) => EventMap[Key]['payload']
 ) {
-  ipcMain.handle(key, (event, ...args) => {
+  ipcMain.handle(key, (event, ...args: EventMap[Key]['args']) => {
     const senderFrame = event.senderFrame;
 
     if (senderFrame === null) {
@@ -33,10 +33,10 @@ export function ipcMainHandle<Key extends keyof EventPayloadMap>(
   });
 }
 
-export function webContentsSend<Key extends keyof EventPayloadMap>(
+export function webContentsSend<Key extends keyof EventMap>(
   webContents: WebContents,
   key: Key,
-  payload: EventPayloadMap[Key]
+  payload: EventMap[Key]['payload']
 ) {
   webContents.send(key, payload);
 }

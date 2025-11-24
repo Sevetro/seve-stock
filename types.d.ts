@@ -1,27 +1,35 @@
 interface Window {
   electron: {
-    getCompaniesList: () => Promise<CompaniesList | undefined>
-    getCompanyStockData: (ticker: string, stooqStartDate: string) => Promise<CompanyStockData | undefined>
-    getAvgPrice: (ticker: string, stooqStartDate: string) => Promise<number | undefined>
-    subscribeToMessages: (callback: (msg: Message) => void) => UnsubscribeFn
+    getTickers: EventFunction<'getTickers'>
+    getCompanyStockData: EventFunction<'getCompanyStockData'>
+    getCurrentPrice: EventFunction<'getCurrentPrice'>
+    getCheapStocks: EventFunction<'getCheapStocks'>
+
+    subscribeToMessages: EventSubscription<'message'>
   };
 }
 
-type EventPayloadMap = {
-  getCompaniesList: Promise<CompaniesList | undefined>
-  getCompanyStockData: Promise<CompanyStockData | undefined>
-  getAvgPrice: Promise<number | undefined>
-  message: Message
+interface EventMap {
+  getTickers: { args: [], payload: Promise<Tickers | undefined> }
+  getCompanyStockData: { args: [symbol: string, stooqStartDate: string], payload: Promise<CompanyStockData | undefined> }
+  getCurrentPrice: { args: [symbol: string], payload: Promise<number | undefined> }
+  getCheapStocks: { args: [stooqStartDate: string, count: number], payload: Promise<CheapStocks | undefined> }
+
+  message: { args: [], payload: Message }
 }
+
+type EventFunction<Key extends keyof EventMap> =
+  (...args: EventMap[Key]['args']) => EventMap[Key]['payload']
 
 type UnsubscribeFn = () => void;
+type EventSubscription<Key extends keyof EventMap> =
+  (callback: (payload: EventMap[Key]['payload']) => void) => UnsubscribeFn;
 
-interface CompanyWithSymbol {
-  ticker: string
-  company: string
-  fullname: string
+interface Ticker {
+  symbol: string
+  name: string
 }
-type CompaniesList = CompanyWithSymbol[]
+type Tickers = Ticker[]
 
 interface StockDataRecord {
   date: string;
@@ -38,3 +46,8 @@ interface Message {
   source: string
   msg: string
 }
+
+interface CheapStock extends Ticker {
+  discount: number
+}
+type CheapStocks = CheapStock[]

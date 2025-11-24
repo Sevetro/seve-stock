@@ -1,60 +1,128 @@
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
 import { subDays } from 'date-fns';
 
-import { Combobox, Select } from '../../design-system';
-import { useCompaniesList } from '../../hooks/useCompaniesList';
+import {
+  Combobox, Select, Slider, Switch
+} from '../../design-system';
+import { useTickers, useCompanyStockData, useCurrentPrice } from '../../hooks';
 import { CandleChart } from '../candle-chart/candle-chart';
-import { useCompanyStockData } from '../../hooks/useCompanyStockData';
 import { createCandlestickData } from '../candle-chart/candle-chart.utils';
-import type { SelectOptions } from '../../design-system/select';
-import { mainFrame, mainFrameControls } from './main-frame.module.scss';
+import {
+  avgPriceContainer,
+  cheapStockController,
+  cheapStockControllerLegend,
+  cheapStockSliderWrapper,
+  currPriceContainer,
+  functionsCard, mainFrame, mainFrameControls, pricesContainer, tickerCard
+} from './main-frame.module.scss';
 import { convertNativeDateToStooqDate } from '../../../electron/shared-with-ui/date';
-
-function createSelectOptions(companiesList: CompaniesList | undefined) {
-  return companiesList?.map(({ company, ticker }) => ({ label: company, value: ticker })) ?? [];
-}
-
-const selectOptions: SelectOptions = [{ label: '1 day', value: '1' }, { label: '2 days', value: '2' },
-{ label: '1 week', value: '7' }, { label: '2 weeks', value: '14' }, { label: '1 month', value: '30' },
-{ label: '2 months', value: '60' }, { label: '3 months', value: '90' }, { label: '6 months', value: '180' },
-{ label: '1 year', value: '365' }, { label: '2 years', value: '730' }, { label: '3 years', value: '1095' },
-{ label: '5 years', value: '1826' }, { label: '10 years', value: '3652' }
-];
+import { getAvgPrice, getTickersSelectOptions, periodSelectOptions } from './main-frame.utils';
+import { formatPrice } from '../../utils/currency';
 
 export const MainFrame = () => {
-  const companiesList = useCompaniesList();
-  const [ticker, setTicker] = useState('');
-  const [avgPrice, setAvgPrice] = useState(0);
-  const [period, setPeriod] = useState('7')
+  const tickers = useTickers();
+  const [symbol, setSymbol] = useState('PKN');
+  const [period, setPeriod] = useState('30');
+  const stooqStartDate = convertNativeDateToStooqDate(subDays(new Date(), Number(period)));
+  const companyStockData = useCompanyStockData(symbol, stooqStartDate);
+  const currentPrice = useCurrentPrice(symbol);
+  const [cheapStocksCountArr, setCheapStocksCountArr] = useState([0]);
+  const cheapStocksCount = cheapStocksCountArr[0];
+  const [cheapStocksEnabled, setCheapStocksEnabled] = useState(false);
+  const [cheapStocks, setCheapStocks] = useState<CheapStock[]>();
+  const [cheapStocksLoading, setCheapStocksLoading] = useState(false);
 
-  const stooqStartDate = subDays(new Date(), Number(period))
+  const tickerSelectOptions = useMemo(() => (cheapStocksEnabled
+    ? getTickersSelectOptions(cheapStocks)
+    : getTickersSelectOptions(tickers)),
+    [cheapStocks, cheapStocksEnabled, tickers]
+  );
 
-  const companyStockData = useCompanyStockData(ticker, convertNativeDateToStooqDate(stooqStartDate));
+  const findCheapStockLegend = cheapStocksCount === 0
+    ? 'Find cheap stocks - off'
+    : `Find ${cheapStocksCount} cheap stocks`;
 
+  async function handleCheapStocksToggle(checked: boolean) {
+    if (checked === true) {
+      setCheapStocksLoading(true);
 
-  async function handleButtonClick() {
-    setAvgPrice(await window.electron.getAvgPrice(ticker, convertNativeDateToStooqDate(stooqStartDate)) ?? 0);
+      try {
+        const cheapStocksData = await window.electron.getCheapStocks(stooqStartDate, cheapStocksCount);
+        if (cheapStocksData === undefined) throw new Error('dupa'); //TODO
+
+        setCheapStocks(cheapStocksData);
+        setSymbol(cheapStocksData[0].symbol);
+        setCheapStocksEnabled(checked);
+      } catch (err) {
+        console.log(err); //TODO
+      } finally {
+        setCheapStocksLoading(false);
+      }
+    } else {
+      setCheapStocksEnabled(false);
+    }
+  }
+
+  function handleCheapStocksSlide(count: number[]) {
+    if (cheapStocksEnabled) setCheapStocksEnabled(false);
+    setCheapStocksCountArr(count);
+  }
+
+  function handlePeriodChange(value: string) {
+    if (cheapStocksEnabled) setCheapStocksEnabled(false);
+    setPeriod(value);
   }
 
   return (
-    <div className={mainFrame}>
-      <div className={mainFrameControls}>
-        <Combobox
-          placeholder='Ticker'
-          options={createSelectOptions(companiesList)}
-          value={ticker}
-          setValue={setTicker}
-          searchPlaceholder='Search ticker...'
-        />
+    <main className={mainFrame}>
+      <section className={tickerCard}>
+        <header className={mainFrameControls}>
+          <Combobox
+            placeholder='Ticker'
+            options={tickerSelectOptions}
+            value={symbol}
+            setValue={setSymbol}
+            searchPlaceholder='Search ticker...'
+            width={100}
+          />
 
-        <Select placeholder='Period' value={period} setValue={setPeriod} options={selectOptions} />
+          <Select
+            placeholder='Period'
+            options={periodSelectOptions}
+            value={period}
+            onValueChange={handlePeriodChange}
+            width={100}
+          />
 
-        <button onClick={handleButtonClick}>Get average price</button>
-        <span>{avgPrice}</span>
-      </div>
+          <output className={pricesContainer}>
+            <span className={currPriceContainer}>curr: {formatPrice(currentPrice)}</span>
+            <span className={avgPriceContainer}>avg: {formatPrice(getAvgPrice(companyStockData))}</span>
+          </output>
+        </header>
 
-      {ticker !== '' && <CandleChart data={createCandlestickData(companyStockData ?? [])} />}
+        {symbol !== '' && <CandleChart data={createCandlestickData(companyStockData ?? [])} />}
+      </section>
 
-    </div>
+      <aside className={functionsCard}>
+        <fieldset className={cheapStockController}>
+          <legend className={cheapStockControllerLegend}>{findCheapStockLegend}</legend>
+          <div className={cheapStockSliderWrapper}>
+            <Slider
+              value={cheapStocksCountArr}
+              onValueChange={handleCheapStocksSlide}
+              defaultValue={[0]}
+              max={20}
+              aria='Discount list length'
+            />
+          </div>
+          <Switch
+            checked={cheapStocksEnabled}
+            onCheckedChange={handleCheapStocksToggle}
+            disabled={cheapStocksCount === 0}
+            loading={cheapStocksLoading}
+          />
+        </fieldset>
+      </aside>
+    </main>
   );
 }; 
