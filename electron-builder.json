@@ -14,8 +14,7 @@
   },
   "win": {
     "target": [
-      "portable",
-      "msi"
+      "portable"
     ]
   },
   "extraResources": [
