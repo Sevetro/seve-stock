@@ -14,7 +14,7 @@ const validBumps = ['patch', 'minor', 'major'];
 //   process.exit(1);
 // }
 
-if (!validBumps.includes(versionArg) && !isSemver(versionArg)) {
+if (versionArg !== "" && !validBumps.includes(versionArg) && !isSemver(versionArg)) {
   console.error(`❌ Error: invalid argument "${versionArg}". Allowed: patch, minor, major or X.Y.Z`);
   process.exit(1);
 }
