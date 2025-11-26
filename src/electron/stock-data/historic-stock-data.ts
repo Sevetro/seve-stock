@@ -8,8 +8,7 @@ import { StockRecordCache } from './types.js';
 import { convertStringDateToStooqDate, timestampParser } from './utils.js';
 import { fetchingPeriodYears, staleStockDataMinutes } from './config.js';
 import { printAndSendError, printAndSendLog } from '../utils/message.js';
-import { errors } from '../shared-with-ui/errors.js';
-import { getErrorMsg, isError } from '../utils/error.js';
+import { errors, getErrorMsg, isError } from '../shared-with-ui/errors.js';
 import { logs } from '../shared-with-ui/logs.js';
 import { convertNativeDateToStooqDate } from '../shared-with-ui/date.js';
 
@@ -63,7 +62,6 @@ async function fetchHistoricStockData(symbol: string, webContents: WebContents) 
 
     return stockData;
   } catch (err) {
-    console.log(err);
     printAndSendError(webContents, fetchHistoricStockData.name, err);
   }
 }

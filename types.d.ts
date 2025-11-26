@@ -45,6 +45,9 @@ interface Message {
   type: 'log' | 'error'
   source: string
   msg: string
+  details?: {
+    symbol?: string
+  }
 }
 
 interface CheapStock extends Ticker {

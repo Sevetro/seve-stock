@@ -1,15 +1,20 @@
-function isErrorMsg(msg: string) {
-  return msg.startsWith('[ERROR]');
-}
-function isLogMsg(msg: string) {
-  return msg.startsWith('[LOG]');
+import { errors, getErrorMsg } from '../../electron/shared-with-ui/errors';
+
+export function isCheapStocksWarning(message: Message) {
+  return message.source === 'getCheapStocks' &&
+    message.details?.symbol !== undefined &&
+    (message.msg === errors.cantGetAvgPrice(message.details.symbol) ||
+      message.msg === errors.cantGetCurrentPrice(message.details.symbol));
 }
 
-export function printMessages(messages: string[] | undefined) {
-  if (messages === undefined) return;
+function serializeUiMsg({ type, source, msg }: Message) {
+  return `[UI]:[${type.toUpperCase()}]:[${source}] ${msg}`;
+}
 
-  for (const msg of messages) {
-    if (isLogMsg(msg)) console.log(msg);
-    if (isErrorMsg(msg)) console.error(msg);
-  }
+function printUiMsg(message: Message) {
+  console.log(serializeUiMsg(message));
+}
+
+export function printUiError(source: string, err: unknown) {
+  printUiMsg({ msg: getErrorMsg(err), source, type: 'error' });
 }

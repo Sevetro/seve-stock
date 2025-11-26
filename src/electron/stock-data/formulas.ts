@@ -3,16 +3,16 @@ import { WebContents } from 'electron';
 import { getHistoricStockData } from './historic-stock-data.js';
 import { errors } from '../shared-with-ui/errors.js';
 import { convertStringDateToStooqDate } from './utils.js';
-import { printAndSendError, printAndSendLog } from '../utils/message.js';
+import { printAndSendError, printAndSendLog, printAndSendMsg } from '../utils/message.js';
 import { logs } from '../shared-with-ui/logs.js';
 import { getTickers } from './tickers.js';
 import { YahooFinanceType } from '../main.js';
 import { getCurrentPrice } from './current-price.js';
 
 export async function getAvgPrice(symbol: string, stooqStartDate: string, webContents: WebContents) {
-  const companyStockData = await getHistoricStockData(symbol, stooqStartDate, webContents);
-
   try {
+    const companyStockData = await getHistoricStockData(symbol, stooqStartDate, webContents);
+
     if (companyStockData === undefined) throw new Error(errors.getAvgPriceStockDataUndefined(symbol));
     if (companyStockData.length === 0) throw new Error(errors.getAvgPriceStockDataEmpty(symbol));
 
@@ -27,36 +27,48 @@ export async function getAvgPrice(symbol: string, stooqStartDate: string, webCon
   }
 }
 
+// Before changing the name, check out usage in messages source
 export async function getCheapStocks(
   stooqStartDate: string, count: number, webContents: WebContents, yahooFinance: YahooFinanceType
 ) {
   try {
     const tickers = await getTickers(webContents, yahooFinance);
-    if (tickers === undefined || tickers.length === 0) throw new Error('dupa'); //TODO
+    if (tickers === undefined || tickers.length === 0) throw new Error(errors.cheapStocksNoTickers);
     const symbols = tickers.map(ticker => ticker.symbol);
 
-    const currentPrices: Record<string, number | undefined> = {};
+    const currentPrices: Record<string, number> = {};
+    const validCurrentSymbols: string[] = [];
     await Promise.all(
       symbols.map(async symbol => {
-        currentPrices[symbol] = await getCurrentPrice(symbol, yahooFinance, webContents);
+        const currPrice = await getCurrentPrice(symbol, yahooFinance, webContents);
+        if (currPrice === undefined) {
+          printAndSendMsg(webContents, { msg: errors.cantGetCurrentPrice(symbol), source: getCheapStocks.name, type: 'error', details: { symbol } });
+        } else {
+          currentPrices[symbol] = currPrice;
+          validCurrentSymbols.push(symbol);
+        }
       })
     );
 
-    const avgPrices: Record<string, number | undefined> = {};
-    for (const symbol of symbols) {
-      avgPrices[symbol] = await getAvgPrice(symbol, stooqStartDate, webContents);
+    const avgPrices: Record<string, number> = {};
+    const validAvgSymbols: string[] = [];
+    for (const symbol of validCurrentSymbols) {
+      const avgPrice = await getAvgPrice(symbol, stooqStartDate, webContents);
+      if (avgPrice === undefined) {
+        printAndSendMsg(webContents, { msg: errors.cantGetAvgPrice(symbol), source: getCheapStocks.name, type: 'error', details: { symbol } });
+      } else {
+        avgPrices[symbol] = avgPrice;
+        validAvgSymbols.push(symbol);
+      }
     }
 
-    const cheapStocks = tickers.map(({ symbol, name }) => {
-      if (currentPrices[symbol] === undefined) throw new Error(errors.currentPriceUndefined(symbol));
-      if (avgPrices[symbol] === undefined) throw new Error(errors.avgPriceUndefined(symbol));
-
-      return {
+    const cheapStocks = tickers
+      .filter(ticker => validAvgSymbols.includes(ticker.symbol))
+      .map(({ symbol, name }) => ({
         symbol,
         name,
         discount: currentPrices[symbol] / avgPrices[symbol]
-      };
-    });
+      }));
 
     return cheapStocks.sort((a, b) => a.discount - b.discount).slice(0, count);
   } catch (err) {

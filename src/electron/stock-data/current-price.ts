@@ -7,11 +7,10 @@ import { YahooFinanceType } from '../main.js';
 import { printAndSendError, printAndSendLog } from '../utils/message.js';
 import { StockQuoteCache } from './types.js';
 import { timestampParser } from './utils.js';
-import { getErrorMsg, isError } from '../utils/error.js';
 import { logs } from '../shared-with-ui/logs.js';
 import { differenceInMinutes } from 'date-fns';
 import { staleQuoteMinutes } from './config.js';
-import { errors } from '../shared-with-ui/errors.js';
+import { errors, getErrorMsg, isError } from '../shared-with-ui/errors.js';
 
 const stockQuotesCachePath = path.join(dataCacheDirname, 'stock-quotes');
 
@@ -42,7 +41,7 @@ export async function getCurrentPrice(symbol: string, yahooFinance: YahooFinance
     const parsedData: StockQuoteCache = JSON.parse(rawData, timestampParser);
     const { timestamp, price } = parsedData;
 
-    if (price === undefined || price === 0) throw new Error(logs.invalidQuotePrice(symbol));
+    if (price === undefined || price === 0) throw new Error(errors.invalidQuotePrice(symbol));
 
     const minutesSinceUpdate = differenceInMinutes(new Date(), timestamp);
 
@@ -65,8 +64,8 @@ export async function getCurrentPrice(symbol: string, yahooFinance: YahooFinance
       printAndSendLog(webContents, getCurrentPrice.name, logs.quoteCacheNotFound(symbol));
       return await fetchCurrentPrice(symbol, yahooFinance, webContents);
     }
-    else if (getErrorMsg(err) === logs.invalidQuotePrice(symbol)) {
-      printAndSendLog(webContents, getCurrentPrice.name, logs.invalidQuotePrice(symbol));
+    else if (getErrorMsg(err) === errors.invalidQuotePrice(symbol)) {
+      printAndSendError(webContents, getCurrentPrice.name, errors.invalidQuotePrice(symbol));
       return await fetchCurrentPrice(symbol, yahooFinance, webContents);
     }
     else {

@@ -7,9 +7,8 @@ import { dataCacheDirname } from './constants.js';
 import { TickersCache } from './types.js';
 import { timestampParser } from './utils.js';
 import { staleTickersDays } from './config.js';
-import { errors } from '../shared-with-ui/errors.js';
+import { errors, getErrorMsg, isError } from '../shared-with-ui/errors.js';
 import { printAndSendError, printAndSendLog, printAndSendMsg } from '../utils/message.js';
-import { getErrorMsg, isError } from '../utils/error.js';
 import { logs } from '../shared-with-ui/logs.js';
 import { YahooFinanceType } from '../main.js';
 

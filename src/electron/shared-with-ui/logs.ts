@@ -6,6 +6,5 @@ export const logs = {
   stockDataStale: (symbol: string) => `Stock data for ${symbol} is stale, trying to fetch...`,
   earliestAvailableData: (symbol: string, earliestAvailableData: string) => `Earliest available data for ${symbol} is ${earliestAvailableData}.`,
   quoteCacheNotFound: (symbol: string) => `Couldn't find quote cache file for ${symbol}.`,
-  invalidQuotePrice: (symbol: string) => `Invalid quote price for ${symbol}.`,
   staleQuote: (symbol: string) => `${symbol} quote is stale, trying to fetch...`
 } as const; 
