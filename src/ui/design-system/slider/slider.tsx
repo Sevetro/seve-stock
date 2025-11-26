@@ -6,17 +6,15 @@ interface SliderProps {
   value: number[]
   onValueChange: (value: number[]) => void
   max: number
-  defaultValue: number[]
   aria?: string
 }
 
-export const Slider = ({ value, onValueChange, max, defaultValue, aria }: SliderProps) => (
+export const Slider = ({ value, onValueChange, max, aria }: SliderProps) => (
   <form>
     <RadixSlider.Root
       value={value}
       onValueChange={onValueChange}
       className={sliderRoot}
-      defaultValue={defaultValue}
       max={max}
       step={1}
     >

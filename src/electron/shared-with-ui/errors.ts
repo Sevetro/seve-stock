@@ -12,7 +12,26 @@ export const errors = {
   getAvgPriceStockDataEmpty: (symbol: string) => `Stock data for ${symbol} is empty.`,
   noAvailableTickers: 'No available tickers',
   cantGetYahooQuotes: 'Couldn\'t fetch quotes from Yahoo.',
+  invalidQuotePrice: (symbol: string) => `Invalid quote price for ${symbol}.`,
   freshQuoteUnavailable: (symbol: string) => `Fresh ${symbol} quote unavailable, using stale quote from cache.`,
-  currentPriceUndefined: (symbol: string) => `Current ${symbol} price is undefined.`,
-  avgPriceUndefined: (symbol: string) => `Average ${symbol} price is undefined.`
-} as const; 
+  cantGetCurrentPrice: (symbol: string) => `Couldn't get ${symbol} current price.`,
+  cantGetAvgPrice: (symbol: string) => `Couldn't get ${symbol} average price.`,
+  cheapStocksNoTickers: 'No available tickers.'
+} as const;
+
+export function isError(err: unknown): err is Error {
+  return err instanceof Error;
+}
+function isTypeError(err: unknown): err is TypeError {
+  return err instanceof TypeError;
+}
+
+export function getErrorMsg(err: unknown) {
+  if (isTypeError(err)) {
+    return `${err.message} ${err.cause}`;
+  } else if (isError(err)) {
+    return err.message;
+  } else {
+    return errors.unknownError;
+  }
+}
