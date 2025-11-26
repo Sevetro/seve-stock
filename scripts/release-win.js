@@ -20,13 +20,13 @@ if (!validBumps.includes(versionArg) && !isSemver(versionArg)) {
 }
 
 
-console.log('🔨 Building Windows executable...');
-try {
-  execSync('npm run dist:win', { stdio: 'inherit' });
-} catch (err) {
-  console.error('❌ Error while building .exe');
-  process.exit(1);
-}
+// console.log('🔨 Building Windows executable...');
+// try {
+//   execSync('npm run dist:win', { stdio: 'inherit' });
+// } catch (err) {
+//   console.error('❌ Error while building .exe');
+//   process.exit(1);
+// }
 
 
 const releaseCmd = `npx release-it ${versionArg}`;
