@@ -1,20 +1,15 @@
 #!/usr/bin/env node
 import { execSync } from 'child_process';
 
-const versionArg = process.argv[2] ?? "";
+const releaseName = process.argv[2];
 
-function isSemver(version) {
-  return /^\d+\.\d+\.\d+$/.test(version);
-}
-
-const validBumps = ['patch', 'minor', 'major'];
-
-if (versionArg !== "" && !validBumps.includes(versionArg) && !isSemver(versionArg)) {
-  console.error(`❌ Error: invalid argument "${versionArg}". Allowed: patch, minor, major or X.Y.Z`);
+if (releaseName === undefined) {
+  console.error(`❌ Error: Please provide release name`);
   process.exit(1);
 }
 
-const releaseCmd = `npx release-it ${versionArg}`;
+
+const releaseCmd = `npx release-it --github.releaseName=${releaseName}`;
 console.log(`🚀 Running: ${releaseCmd}`);
 try {
   execSync(releaseCmd, { stdio: 'inherit' });
