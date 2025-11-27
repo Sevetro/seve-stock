@@ -3,3 +3,4 @@ export { Combobox } from './combobox';
 export { Select, type SelectOptions } from './select';
 export { Slider } from './slider';
 export { Switch } from './switch';
+export { Toast } from './toast';
