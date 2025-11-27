@@ -13,9 +13,6 @@
     ]
   },
   "hooks": {
-    "before:github:release": [
-      "node ./scripts/pre-release.js",
-      "npm run dist:win"
-    ]
+    "before:github:release": "npm run dist:win"
   }
 }
