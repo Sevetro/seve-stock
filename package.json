@@ -25,14 +25,14 @@
   },
   "release-it": {
     "git": {
-      "commitMessage": "commitMessage - chore: release v${version}",
+      "commitMessage": "chore: release v${version}",
       "tagName": "v${version}"
     },
     "github": {
       "release": true,
       "releaseName": "releaseName - v${version}",
       "assets": [
-        "dist/seve-stock.exe"
+        "dist/seve-stock ${version}.exe"
       ]
     },
     "hooks": {
