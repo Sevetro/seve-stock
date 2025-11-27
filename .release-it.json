@@ -1,5 +1,6 @@
 {
   "git": {
+    "requireBranch": "main",
     "commitMessage": "chore: release v${version}",
     "tagName": "v${version}"
   },
@@ -12,6 +13,9 @@
     ]
   },
   "hooks": {
-    "before:github:release": "node ./scripts/pre-release.js && npm run dist:win"
+    "before:github:release": [
+      "node ./scripts/pre-release.js",
+      "npm run dist:win"
+    ]
   }
 }
