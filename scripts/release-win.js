@@ -9,11 +9,6 @@ function isSemver(version) {
 
 const validBumps = ['patch', 'minor', 'major'];
 
-// if (!versionArg) {
-//   console.error('❌ Error: you need to provide one of following arguments - patch, minor, major or exact version X.Y.Z');
-//   process.exit(1);
-// }
-
 if (versionArg !== "" && !validBumps.includes(versionArg) && !isSemver(versionArg)) {
   console.error(`❌ Error: invalid argument "${versionArg}". Allowed: patch, minor, major or X.Y.Z`);
   process.exit(1);

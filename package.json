@@ -36,8 +36,7 @@
       ]
     },
     "hooks": {
-      "before:init": "npm run dist:win",
-      "after:bump": "echo 'New version bumped!'"
+      "after:bump": "npm run dist:win"
     }
   },
   "dependencies": {
