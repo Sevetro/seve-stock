@@ -32,7 +32,7 @@
       "release": true,
       "releaseName": "releaseName - v${version}",
       "assets": [
-        "dist/seve-stock ${version}.exe"
+        "dist/seve-stock_${version}.exe"
       ]
     },
     "hooks": {

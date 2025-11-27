@@ -13,9 +13,8 @@
     "category": "Utility"
   },
   "win": {
-    "target": [
-      "portable"
-    ]
+    "target": "portable",
+    "artifactName": "seve-stock_${version}.${ext}"
   },
   "extraResources": [
     "dist-electron/preload.cjs"
