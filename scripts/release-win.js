@@ -3,7 +3,7 @@ import { execSync } from 'child_process';
 
 const releaseName = process.argv.slice(2).join(' ');
 
-if (releaseName === undefined) {
+if (releaseName === '') {
   console.error(`❌ Error: Please provide release name`);
   process.exit(1);
 }
