@@ -15,7 +15,7 @@ async function main() {
   const releaseName = await ask("Enter release name: ");
   const releaseNotes = await ask("Enter release notes: ");
 
-  fs.writeFileSync("release-info.json", JSON.stringify({ releaseName, releaseNotes }));
+  fs.writeFileSync("release-body.json", JSON.stringify({ releaseName, releaseNotes }));
 
   rl.close();
 }

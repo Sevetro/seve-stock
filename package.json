@@ -21,7 +21,6 @@
     "dist:mac": "npm run dist:prepare && electron-builder --mac --arm64",
     "dist:win": "npm run dist:prepare && electron-builder --win --x64",
     "dist:linux": "npm run dist:prepare && electron-builder --linux --x64",
-    "prerelease:win": "node ./scripts/pre-release.js",
     "release:win": "node ./scripts/release-win.js"
   },
   "dependencies": {
