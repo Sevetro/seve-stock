@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 import { execSync } from 'child_process';
 
-const releaseName = process.argv[2];
+const releaseName = process.argv.slice(2).join(' ');
 
 if (releaseName === undefined) {
   console.error(`❌ Error: Please provide release name`);
