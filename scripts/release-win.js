@@ -9,7 +9,7 @@ if (releaseName === undefined) {
 }
 
 
-const releaseCmd = `npx release-it --github.releaseName=${releaseName}`;
+const releaseCmd = `npx release-it --github.releaseName=${releaseName} --ci`;
 console.log(`🚀 Running: ${releaseCmd}`);
 try {
   execSync(releaseCmd, { stdio: 'inherit' });

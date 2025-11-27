@@ -6,13 +6,11 @@
   },
   "github": {
     "release": true,
-    "releaseBodyFile": "release-body.txt",
     "assets": [
       "dist/*.exe"
     ]
   },
   "hooks": {
-    "before:github:release": "npm run dist:win",
-    "after:bump": "npx auto-changelog -p"
+    "before:github:release": "npm run dist:win"
   }
 }
