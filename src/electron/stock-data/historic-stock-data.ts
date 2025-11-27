@@ -7,7 +7,7 @@ import { dataCacheDirname } from './constants.js';
 import { StockRecordCache } from './types.js';
 import { convertStringDateToStooqDate, timestampParser } from './utils.js';
 import { fetchingPeriodYears, staleStockDataMinutes } from './config.js';
-import { printAndSendError, printAndSendLog } from '../utils/message.js';
+import { printAndSendError, printAndSendLog, printAndSendMsg } from '../utils/message.js';
 import { errors, getErrorMsg, isError } from '../shared-with-ui/errors.js';
 import { logs } from '../shared-with-ui/logs.js';
 import { convertNativeDateToStooqDate } from '../shared-with-ui/date.js';
@@ -66,6 +66,7 @@ async function fetchHistoricStockData(symbol: string, webContents: WebContents) 
   }
 }
 
+// Name of the function used in error recognition
 export async function getHistoricStockData(symbol: string, stooqStartDate: string, webContents: WebContents) {
   const endDate = convertNativeDateToStooqDate(new Date());
   let finalStockData: CompanyStockData | undefined;
@@ -85,7 +86,12 @@ export async function getHistoricStockData(symbol: string, stooqStartDate: strin
       const freshStockData = await fetchHistoricStockData(symbol, webContents);
 
       if (freshStockData === undefined || freshStockData.length === 0) {
-        printAndSendLog(webContents, getHistoricStockData.name, errors.freshStockDataUnavailable(symbol));
+        printAndSendMsg(webContents, {
+          msg: errors.freshStockDataUnavailable(symbol),
+          source: getHistoricStockData.name,
+          type: 'error',
+          details: { symbol }
+        });
         finalStockData = stockData;
       } else {
         finalStockData = freshStockData;

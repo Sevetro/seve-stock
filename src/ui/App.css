@@ -2,3 +2,16 @@
   padding: 10px;
   height: 100vh;
 }
+
+.toastViewport {
+  position: fixed;
+  bottom: 20px;
+  right: 20px;
+
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+
+  width: 360px;
+  z-index: 9999;
+}
