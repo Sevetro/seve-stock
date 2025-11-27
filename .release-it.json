@@ -1,0 +1,17 @@
+{
+  "git": {
+    "commitMessage": "chore: release v${version}",
+    "tagName": "v${version}"
+  },
+  "github": {
+    "release": true,
+    "releaseName": "${releaseName} - v${version}",
+    "releaseBodyFile": "release-body.txt",
+    "assets": [
+      "dist/*.exe"
+    ]
+  },
+  "hooks": {
+    "before:github:release": "node ./scripts/pre-release.js && npm run dist:win"
+  }
+}

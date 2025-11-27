@@ -23,22 +23,6 @@
     "dist:linux": "npm run dist:prepare && electron-builder --linux --x64",
     "release:win": "node ./scripts/release-win.js"
   },
-  "release-it": {
-    "git": {
-      "commitMessage": "chore: release v${version}",
-      "tagName": "v${version}"
-    },
-    "github": {
-      "release": true,
-      "releaseName": "releaseName - v${version}",
-      "assets": [
-        "dist/*.exe"
-      ]
-    },
-    "hooks": {
-      "before:github:release": "npm run dist:win"
-    }
-  },
   "dependencies": {
     "@ariakit/react": "^0.4.19",
     "@radix-ui/colors": "^3.0.0",
