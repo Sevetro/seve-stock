@@ -12,11 +12,12 @@ export const errors = {
   getAvgPriceStockDataEmpty: (symbol: string) => `Stock data for ${symbol} is empty.`,
   noAvailableTickers: 'No available tickers',
   cantGetYahooQuotes: 'Couldn\'t fetch quotes from Yahoo.',
+  cantFetchQuote: (symbol: string) => `Couldn't fetch ${symbol} quote.`,
   invalidQuotePrice: (symbol: string) => `Invalid quote price for ${symbol}.`,
   freshQuoteUnavailable: (symbol: string) => `Fresh ${symbol} quote unavailable, using stale quote from cache.`,
   cantGetCurrentPrice: (symbol: string) => `Couldn't get ${symbol} current price.`,
   cantGetAvgPrice: (symbol: string) => `Couldn't get ${symbol} average price.`,
-  cheapStocksNoTickers: 'No available tickers.'
+  cantGetTickers: 'Couldn\'t get any tickers.'
 } as const;
 
 export function isError(err: unknown): err is Error {

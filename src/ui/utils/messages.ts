@@ -12,15 +12,21 @@ export function printUiError(source: string, err: unknown) {
   printUiMsg({ msg: getErrorMsg(err), source, type: 'error' });
 }
 
-export function isInvalidCheapStocksError(message: Message) {
-  return message.source === 'getCheapStocks' &&
-    message.details?.symbol !== undefined &&
-    (message.msg === errors.cantGetAvgPrice(message.details.symbol) ||
-      message.msg === errors.cantGetCurrentPrice(message.details.symbol));
-}
-
 export function isStaleStockDataUsageMessage({ msg, source, details }: Message) {
   return source === 'getHistoricStockData' &&
     details?.symbol !== undefined &&
     msg === errors.freshStockDataUnavailable(details.symbol);
+}
+
+export function isInvalidCheapStocksError({ msg, source, details }: Message) {
+  return source === 'getCheapStocks' &&
+    details?.symbol !== undefined &&
+    (msg === errors.cantGetAvgPrice(details.symbol) ||
+      msg === errors.cantGetCurrentPrice(details.symbol));
+}
+
+export function isStaleBestDividendsError({ msg, source, details }: Message) {
+  return source === 'getDividendYield' &&
+    details?.symbol !== undefined &&
+    msg === errors.freshQuoteUnavailable(details.symbol);
 }

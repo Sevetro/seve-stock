@@ -23,7 +23,7 @@ export const CheapStocks = ({ enabled, setEnabled, stooqStartDate, setCheapStock
   const [cheapStocksLoading, setCheapStocksLoading] = useState(false);
 
   const findCheapStockLabel = cheapStocksCount === 0
-    ? 'Find cheap stocks - off'
+    ? 'Find the cheapest stocks - off'
     : `Find ${cheapStocksCount} cheap stocks`;
 
   function handleCheapStocksSlide(count: number[]) {
@@ -36,17 +36,26 @@ export const CheapStocks = ({ enabled, setEnabled, stooqStartDate, setCheapStock
       setCheapStocksLoading(true);
 
       try {
-        const cheapStocksData = await window.electron.getCheapStocks(stooqStartDate, cheapStocksCount);
-        if (cheapStocksData === undefined || cheapStocksData.length === 0) throw new Error(uiErrors.noCheapStocks);
+        const cheapStocks = await window.electron.getCheapStocks(stooqStartDate, cheapStocksCount);
+        if (cheapStocks === undefined || cheapStocks.length === 0) throw new Error(uiErrors.noCheapStocks);
 
-        setCheapStocks(cheapStocksData);
-        setSymbol(cheapStocksData[0].symbol);
+        const cheapStocksWithValue = cheapStocks.map(({ discount, name, symbol }) => (
+          {
+            name: `${name} - ${(discount * 100).toFixed(0)}%`,
+            symbol,
+            discount
+          }
+        ));
+
+        setCheapStocks(cheapStocksWithValue);
+        setSymbol(cheapStocks[0].symbol);
         setEnabled(true);
       } catch (err) {
         printUiError(handleCheapStocksToggle.name, err);
       } finally {
         setCheapStocksLoading(false);
       }
+
     } else {
       setEnabled(false);
     }
@@ -57,7 +66,7 @@ export const CheapStocks = ({ enabled, setEnabled, stooqStartDate, setCheapStock
       <legend className={cheapStockControllerLegend}>
         {findCheapStockLabel}
         {enabled && hasCheapStocksWarning && (
-          <div className={cheapStocksWarningIcon} data-tooltip="Cheap stocks list may be incomplete">
+          <div className={cheapStocksWarningIcon} data-tooltip="Cheap stocks list might be stale or incomplete">
             <WarningIcon size={20} className={trianglePulse} />
           </div>
         )}

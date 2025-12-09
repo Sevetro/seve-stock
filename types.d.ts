@@ -4,6 +4,7 @@ interface Window {
     getCompanyStockData: EventFunction<'getCompanyStockData'>
     getCurrentPrice: EventFunction<'getCurrentPrice'>
     getCheapStocks: EventFunction<'getCheapStocks'>
+    getBestDividends: EventFunction<'getBestDividends'>
 
     subscribeToMessages: EventSubscription<'message'>
   };
@@ -14,6 +15,7 @@ interface EventMap {
   getCompanyStockData: { args: [symbol: string, stooqStartDate: string], payload: Promise<CompanyStockData | undefined> }
   getCurrentPrice: { args: [symbol: string], payload: Promise<number | undefined> }
   getCheapStocks: { args: [stooqStartDate: string, count: number], payload: Promise<CheapStocks | undefined> }
+  getBestDividends: { args: [count: number], payload: Promise<BestDividends | undefined> }
 
   message: { args: [], payload: Message }
 }
@@ -54,3 +56,8 @@ interface CheapStock extends Ticker {
   discount: number
 }
 type CheapStocks = CheapStock[]
+
+interface BestDividend extends Ticker {
+  dividendYield: number
+}
+type BestDividends = BestDividend[]
