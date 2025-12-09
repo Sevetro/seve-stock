@@ -32,6 +32,9 @@ button {
 }
 
 .functionsCard {
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
     padding: 15px;
     background: rgba(30, 38, 55, 0.9);
     backdrop-filter: blur(12px);

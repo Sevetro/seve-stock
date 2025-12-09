@@ -7,6 +7,7 @@ contextBridge.exposeInMainWorld("electron", {
   getCompanyStockData: async (symbol, stooqStartDate) => ipcRendererInvoke('getCompanyStockData', symbol, stooqStartDate),
   getCurrentPrice: async (symbol) => ipcRendererInvoke('getCurrentPrice', symbol),
   getCheapStocks: async (stooqStartDate, count) => ipcRendererInvoke('getCheapStocks', stooqStartDate, count),
+  getBestDividends: async (count) => ipcRendererInvoke('getBestDividends', count),
 
   subscribeToMessages: (callback) => ipcRendererOn('message', msg => callback(msg))
 } satisfies Window["electron"]);

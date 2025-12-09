@@ -7,7 +7,7 @@ import { printAndSendError, printAndSendLog, printAndSendMsg } from '../utils/me
 import { logs } from '../shared-with-ui/logs.js';
 import { getTickers } from './tickers.js';
 import { YahooFinanceType } from '../main.js';
-import { getCurrentPrice } from './current-price.js';
+import { getCurrentPrice, getDividendYield } from './quotes.js';
 
 export async function getAvgPrice(symbol: string, stooqStartDate: string, webContents: WebContents) {
   try {
@@ -33,11 +33,11 @@ export async function getCheapStocks(
 ) {
   try {
     const tickers = await getTickers(webContents, yahooFinance);
-    if (tickers === undefined || tickers.length === 0) throw new Error(errors.cheapStocksNoTickers);
+    if (tickers === undefined || tickers.length === 0) throw new Error(errors.cantGetTickers);
     const symbols = tickers.map(ticker => ticker.symbol);
 
     const currentPrices: Record<string, number> = {};
-    const validCurrentSymbols: string[] = [];
+    const validPricesSymbols: string[] = [];
     await Promise.all(
       symbols.map(async symbol => {
         const currPrice = await getCurrentPrice(symbol, yahooFinance, webContents);
@@ -45,14 +45,14 @@ export async function getCheapStocks(
           printAndSendMsg(webContents, { msg: errors.cantGetCurrentPrice(symbol), source: getCheapStocks.name, type: 'error', details: { symbol } });
         } else {
           currentPrices[symbol] = currPrice;
-          validCurrentSymbols.push(symbol);
+          validPricesSymbols.push(symbol);
         }
       })
     );
 
     const avgPrices: Record<string, number> = {};
     const validAvgSymbols: string[] = [];
-    for (const symbol of validCurrentSymbols) {
+    for (const symbol of validPricesSymbols) {
       const avgPrice = await getAvgPrice(symbol, stooqStartDate, webContents);
       if (avgPrice === undefined) {
         printAndSendMsg(webContents, { msg: errors.cantGetAvgPrice(symbol), source: getCheapStocks.name, type: 'error', details: { symbol } });
@@ -73,5 +73,32 @@ export async function getCheapStocks(
     return cheapStocks.sort((a, b) => a.discount - b.discount).slice(0, count);
   } catch (err) {
     printAndSendError(webContents, getCheapStocks.name, err);
+  }
+}
+
+export async function getBestDividends(count: number, webContents: WebContents, yahooFinance: YahooFinanceType) {
+  try {
+    const tickers = await getTickers(webContents, yahooFinance);
+    if (tickers == null || tickers.length === 0) throw new Error(errors.cantGetTickers);
+
+    const bestDividends = await Promise.all(
+      tickers.map(async ({ symbol, name }) => {
+        const dividendYield = await getDividendYield(symbol, yahooFinance, webContents);
+        if (dividendYield != null) {
+          return {
+            symbol,
+            name,
+            dividendYield
+          };
+        }
+      })
+    );
+
+    return bestDividends
+      .filter(val => val !== undefined)
+      .sort((a, b) => b.dividendYield - a.dividendYield)
+      .slice(0, count);
+  } catch (err) {
+    printAndSendError(webContents, getBestDividends.name, err);
   }
 }

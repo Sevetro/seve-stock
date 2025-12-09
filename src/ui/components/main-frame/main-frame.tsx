@@ -12,12 +12,14 @@ import { convertNativeDateToStooqDate } from '../../../electron/shared-with-ui/d
 import { getAvgPrice, getTickersSelectOptions, periodSelectOptions } from './main-frame.utils';
 import { formatPrice } from '../../utils/currency';
 import { CheapStocks } from '../cheap-stocks';
+import { BestDividends } from '../best-dividends';
 
 interface MainFrameProps {
   hasCheapStocksWarning: boolean
+  areBestDividendsStale: boolean
 }
 
-export const MainFrame = ({ hasCheapStocksWarning }: MainFrameProps) => {
+export const MainFrame = ({ hasCheapStocksWarning, areBestDividendsStale }: MainFrameProps) => {
   const tickers = useTickers();
   const [symbol, setSymbol] = useState('PKN');
   const [period, setPeriod] = useState('30');
@@ -26,16 +28,31 @@ export const MainFrame = ({ hasCheapStocksWarning }: MainFrameProps) => {
   const currentPrice = useCurrentPrice(symbol);
   const [cheapStocks, setCheapStocks] = useState<CheapStocks>();
   const [cheapStocksEnabled, setCheapStocksEnabled] = useState(false);
+  const [bestDividends, setBestDividends] = useState<BestDividends>();
+  const [bestDividendsEnabled, setBestDividendsEnabled] = useState(false);
 
-  const tickerSelectOptions = useMemo(() => (cheapStocksEnabled
-    ? getTickersSelectOptions(cheapStocks)
-    : getTickersSelectOptions(tickers)),
-    [cheapStocks, cheapStocksEnabled, tickers]
+  const tickerSelectOptions = useMemo(() => (
+    cheapStocksEnabled
+      ? getTickersSelectOptions(cheapStocks)
+      : bestDividendsEnabled
+        ? getTickersSelectOptions(bestDividends)
+        : getTickersSelectOptions(tickers)),
+    [bestDividends, bestDividendsEnabled, cheapStocks, cheapStocksEnabled, tickers]
   );
 
   function handlePeriodChange(value: string) {
     if (cheapStocksEnabled) setCheapStocksEnabled(false);
     setPeriod(value);
+  }
+
+  function handleCheapStocksToggle(enable: boolean) {
+    if (enable && bestDividendsEnabled) setBestDividendsEnabled(false);
+    setCheapStocksEnabled(enable);
+  }
+
+  function handleBestDividendsToggle(enable: boolean) {
+    if (enable && cheapStocksEnabled) setCheapStocksEnabled(false);
+    setBestDividendsEnabled(enable);
   }
 
   return (
@@ -63,17 +80,24 @@ export const MainFrame = ({ hasCheapStocksWarning }: MainFrameProps) => {
           </output>
         </header>
 
-        {symbol !== '' && <CandleChart data={createCandlestickData(companyStockData ?? [])} />}
+        {<CandleChart data={createCandlestickData(companyStockData ?? [])} />}
       </section>
 
       <aside className={functionsCard}>
         <CheapStocks
           enabled={cheapStocksEnabled}
-          setEnabled={setCheapStocksEnabled}
+          setEnabled={handleCheapStocksToggle}
           stooqStartDate={stooqStartDate}
           setCheapStocks={setCheapStocks}
           setSymbol={setSymbol}
           hasCheapStocksWarning={hasCheapStocksWarning}
+        />
+        <BestDividends
+          enabled={bestDividendsEnabled}
+          setEnabled={handleBestDividendsToggle}
+          setBestDividends={setBestDividends}
+          setSymbol={setSymbol}
+          areBestDividendsStale={areBestDividendsStale}
         />
       </aside>
     </main>
