@@ -13,7 +13,7 @@ export type YahooFinanceType = typeof yahooFinance;
 
 app.whenReady().then(async () => {
   const mainWindow = new BrowserWindow({
-    width: 850,
+    width: 1200,
     height: 600,
     webPreferences: {
       preload: getPreloadPath()
@@ -39,6 +39,9 @@ app.whenReady().then(async () => {
     getCheapStocks(stooqStartDate, count, webContents, yahooFinance));
   ipcMainHandle('getBestDividends', (count) =>
     getBestDividends(count, webContents, yahooFinance));
+
+  const quote = await yahooFinance.quote('PKN.WA');
+  console.log(quote);
 
   mainWindow.on('closed', () => {
     app.quit();

@@ -6,7 +6,7 @@ import { useTickers, useCompanyStockData, useCurrentPrice } from '../../hooks';
 import { CandleChart } from '../candle-chart/candle-chart';
 import { createCandlestickData } from '../candle-chart/candle-chart.utils';
 import {
-  avgPriceContainer, currPriceContainer, functionsCard, mainFrame, mainFrameControls, pricesContainer, tickerCard
+  functionsCard, infoCard, mainFrame, mainFrameControls, tickerCard
 } from './main-frame.module.scss';
 import { convertNativeDateToStooqDate } from '../../../electron/shared-with-ui/date';
 import { getAvgPrice, getTickersSelectOptions, periodSelectOptions } from './main-frame.utils';
@@ -55,8 +55,28 @@ export const MainFrame = ({ hasCheapStocksWarning, areBestDividendsStale }: Main
     setBestDividendsEnabled(enable);
   }
 
+  function currentPriceToAvg(curr: number | undefined, avg: number | undefined) {
+    if (curr === undefined || curr === 0 || avg === undefined || avg === 0) throw new Error('Invalid prices TODO');
+    return curr / avg;
+  }
+
+  function getPercentage(value: number, precision = 0) {
+    return `${(value * 100).toFixed(precision)}%`;
+  }
+
   return (
     <main className={mainFrame}>
+
+      <aside className={infoCard}>
+        <div>Current price: {formatPrice(currentPrice)}</div>
+        <div>Current to average: {getPercentage(currentPriceToAvg(currentPrice, getAvgPrice(companyStockData)))}</div>
+        <div>Price to book: 0</div>
+        <div>Market capitalization: 0</div>
+        <div>Dividend yield: 0</div>
+        <div>Annual dividend rate: 0</div>
+
+      </aside>
+
       <section className={tickerCard}>
         <header className={mainFrameControls}>
           <Combobox
@@ -65,7 +85,7 @@ export const MainFrame = ({ hasCheapStocksWarning, areBestDividendsStale }: Main
             value={symbol}
             setValue={setSymbol}
             searchPlaceholder='Search ticker...'
-            width={100}
+            width={150}
           />
           <Select
             placeholder='Period'
@@ -74,10 +94,6 @@ export const MainFrame = ({ hasCheapStocksWarning, areBestDividendsStale }: Main
             onValueChange={handlePeriodChange}
             width={100}
           />
-          <output className={pricesContainer}>
-            <span className={currPriceContainer}>curr: {formatPrice(currentPrice)}</span>
-            <span className={avgPriceContainer}>avg: {formatPrice(getAvgPrice(companyStockData))}</span>
-          </output>
         </header>
 
         {<CandleChart data={createCandlestickData(companyStockData ?? [])} />}

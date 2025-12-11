@@ -17,7 +17,11 @@ const stockQuotesCachePath = path.join(dataCacheDirname, 'stock-quotes');
 
 async function fetchQuote(symbol: string, yahooFinance: YahooFinanceType, webContents: WebContents) {
   try {
-    const quote = await yahooFinance.quote(`${symbol}.WA`, { fields: ['regularMarketPrice', 'dividendYield', 'trailingAnnualDividendYield'] }) as Quote | undefined;
+    const quote = await yahooFinance.quote(`${symbol}.WA`, {
+      fields: [
+        'regularMarketPrice', 'dividendYield', 'trailingAnnualDividendYield'
+      ]
+    }) as Quote | undefined;
     if (quote == null) throw new Error(errors.cantFetchQuote(symbol));
     const { regularMarketPrice: price, dividendYield, trailingAnnualDividendYield } = quote;
 
