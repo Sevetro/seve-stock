@@ -2,7 +2,7 @@ interface Window {
   electron: {
     getTickers: EventFunction<'getTickers'>
     getCompanyStockData: EventFunction<'getCompanyStockData'>
-    getCurrentPrice: EventFunction<'getCurrentPrice'>
+    getQuote: EventFunction<'getQuote'>
     getCheapStocks: EventFunction<'getCheapStocks'>
     getBestDividends: EventFunction<'getBestDividends'>
 
@@ -13,7 +13,7 @@ interface Window {
 interface EventMap {
   getTickers: { args: [], payload: Promise<Tickers | undefined> }
   getCompanyStockData: { args: [symbol: string, stooqStartDate: string], payload: Promise<CompanyStockData | undefined> }
-  getCurrentPrice: { args: [symbol: string], payload: Promise<number | undefined> }
+  getQuote: { args: [symbol: string], payload: Promise<Quote | undefined> }
   getCheapStocks: { args: [stooqStartDate: string, count: number], payload: Promise<CheapStocks | undefined> }
   getBestDividends: { args: [count: number], payload: Promise<BestDividends | undefined> }
 
@@ -43,6 +43,13 @@ interface StockDataRecord {
 }
 type CompanyStockData = StockDataRecord[]
 
+interface Quote {
+  price: number;
+  dividend?: number;
+  priceToBook: number;
+  marketCap: number;
+}
+
 interface Message {
   type: 'log' | 'error'
   source: string
@@ -58,6 +65,6 @@ interface CheapStock extends Ticker {
 type CheapStocks = CheapStock[]
 
 interface BestDividend extends Ticker {
-  dividendYield: number
+  dividend: number
 }
 type BestDividends = BestDividend[]

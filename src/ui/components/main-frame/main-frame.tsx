@@ -2,15 +2,16 @@ import { useMemo, useState } from 'react';
 import { subDays } from 'date-fns';
 
 import { Combobox, Select } from '../../design-system';
-import { useTickers, useCompanyStockData, useCurrentPrice } from '../../hooks';
+import { useTickers, useCompanyStockData, useQuote } from '../../hooks';
 import { CandleChart } from '../candle-chart/candle-chart';
 import { createCandlestickData } from '../candle-chart/candle-chart.utils';
 import {
   functionsCard, infoCard, mainFrame, mainFrameControls, tickerCard
 } from './main-frame.module.scss';
 import { convertNativeDateToStooqDate } from '../../../electron/shared-with-ui/date';
-import { getAvgPrice, getTickersSelectOptions, periodSelectOptions } from './main-frame.utils';
-import { formatPrice } from '../../utils/currency';
+import {
+  currentPriceToAvg, getAvgPrice, getPercentage, getTickersSelectOptions, periodSelectOptions
+} from './main-frame.utils';
 import { CheapStocks } from '../cheap-stocks';
 import { BestDividends } from '../best-dividends';
 
@@ -19,13 +20,18 @@ interface MainFrameProps {
   areBestDividendsStale: boolean
 }
 
+const formatter = new Intl.NumberFormat('en', {
+  notation: 'compact',
+  compactDisplay: 'long'
+});
+
 export const MainFrame = ({ hasCheapStocksWarning, areBestDividendsStale }: MainFrameProps) => {
   const tickers = useTickers();
   const [symbol, setSymbol] = useState('PKN');
   const [period, setPeriod] = useState('30');
   const stooqStartDate = convertNativeDateToStooqDate(subDays(new Date(), Number(period)));
   const companyStockData = useCompanyStockData(symbol, stooqStartDate);
-  const currentPrice = useCurrentPrice(symbol);
+  const quote = useQuote(symbol);
   const [cheapStocks, setCheapStocks] = useState<CheapStocks>();
   const [cheapStocksEnabled, setCheapStocksEnabled] = useState(false);
   const [bestDividends, setBestDividends] = useState<BestDividends>();
@@ -55,26 +61,14 @@ export const MainFrame = ({ hasCheapStocksWarning, areBestDividendsStale }: Main
     setBestDividendsEnabled(enable);
   }
 
-  function currentPriceToAvg(curr: number | undefined, avg: number | undefined) {
-    if (curr === undefined || curr === 0 || avg === undefined || avg === 0) throw new Error('Invalid prices TODO');
-    return curr / avg;
-  }
-
-  function getPercentage(value: number, precision = 0) {
-    return `${(value * 100).toFixed(precision)}%`;
-  }
-
   return (
     <main className={mainFrame}>
-
       <aside className={infoCard}>
-        <div>Current price: {formatPrice(currentPrice)}</div>
-        <div>Current to average: {getPercentage(currentPriceToAvg(currentPrice, getAvgPrice(companyStockData)))}</div>
-        <div>Price to book: 0</div>
-        <div>Market capitalization: 0</div>
-        <div>Dividend yield: 0</div>
-        <div>Annual dividend rate: 0</div>
-
+        <div>Current price: {quote?.price}</div>
+        <div>Discount: {getPercentage(currentPriceToAvg(quote?.price, getAvgPrice(companyStockData)))}</div>
+        <div>Dividend: {quote?.dividend && `${quote?.dividend}%`}</div>
+        <div>Price to book: {getPercentage(quote?.priceToBook)}</div>
+        <div>Market cap: {formatter.format(quote?.marketCap ?? 0)}</div>
       </aside>
 
       <section className={tickerCard}>

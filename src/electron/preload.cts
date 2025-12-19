@@ -5,7 +5,7 @@ import { contextBridge, ipcRenderer } from "electron";
 contextBridge.exposeInMainWorld("electron", {
   getTickers: async () => ipcRendererInvoke('getTickers'),
   getCompanyStockData: async (symbol, stooqStartDate) => ipcRendererInvoke('getCompanyStockData', symbol, stooqStartDate),
-  getCurrentPrice: async (symbol) => ipcRendererInvoke('getCurrentPrice', symbol),
+  getQuote: async (symbol) => ipcRendererInvoke('getQuote', symbol),
   getCheapStocks: async (stooqStartDate, count) => ipcRendererInvoke('getCheapStocks', stooqStartDate, count),
   getBestDividends: async (count) => ipcRendererInvoke('getBestDividends', count),
 
