@@ -7,7 +7,7 @@ import { printAndSendError, printAndSendLog, printAndSendMsg } from '../utils/me
 import { logs } from '../shared-with-ui/logs.js';
 import { getTickers } from './tickers.js';
 import { YahooFinanceType } from '../main.js';
-import { getCurrentPrice, getDividendYield } from './quotes.js';
+import { getQuote } from './quotes.js';
 
 export async function getAvgPrice(symbol: string, stooqStartDate: string, webContents: WebContents) {
   try {
@@ -40,8 +40,8 @@ export async function getCheapStocks(
     const validPricesSymbols: string[] = [];
     await Promise.all(
       symbols.map(async symbol => {
-        const currPrice = await getCurrentPrice(symbol, yahooFinance, webContents);
-        if (currPrice === undefined) {
+        const currPrice = (await getQuote(symbol, yahooFinance, webContents))?.price;
+        if (currPrice === undefined || currPrice === 0) {
           printAndSendMsg(webContents, { msg: errors.cantGetCurrentPrice(symbol), source: getCheapStocks.name, type: 'error', details: { symbol } });
         } else {
           currentPrices[symbol] = currPrice;
@@ -83,12 +83,12 @@ export async function getBestDividends(count: number, webContents: WebContents, 
 
     const bestDividends = await Promise.all(
       tickers.map(async ({ symbol, name }) => {
-        const dividendYield = await getDividendYield(symbol, yahooFinance, webContents);
-        if (dividendYield != null) {
+        const dividend = (await getQuote(symbol, yahooFinance, webContents))?.dividend;
+        if (dividend != null) {
           return {
             symbol,
             name,
-            dividendYield
+            dividend
           };
         }
       })
@@ -96,7 +96,7 @@ export async function getBestDividends(count: number, webContents: WebContents, 
 
     return bestDividends
       .filter(val => val !== undefined)
-      .sort((a, b) => b.dividendYield - a.dividendYield)
+      .sort((a, b) => b.dividend - a.dividend)
       .slice(0, count);
   } catch (err) {
     printAndSendError(webContents, getBestDividends.name, err);

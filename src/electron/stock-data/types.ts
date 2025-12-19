@@ -18,6 +18,7 @@ export type PreparedData = Record<string, CompanyWithStockData>
 export interface StockQuoteCache {
   timestamp: Date
   price: number
-  dividendYield?: number
-  trailingAnnualDividendYield?: number
+  dividend?: number
+  priceToBook: number
+  marketCap: number
 }

@@ -13,7 +13,7 @@ export const errors = {
   noAvailableTickers: 'No available tickers',
   cantGetYahooQuotes: 'Couldn\'t fetch quotes from Yahoo.',
   cantFetchQuote: (symbol: string) => `Couldn't fetch ${symbol} quote.`,
-  invalidQuotePrice: (symbol: string) => `Invalid quote price for ${symbol}.`,
+  invalidQuote: (symbol: string) => `${symbol} quote is invalid.`,
   freshQuoteUnavailable: (symbol: string) => `Fresh ${symbol} quote unavailable, using stale quote from cache.`,
   cantGetCurrentPrice: (symbol: string) => `Couldn't get ${symbol} current price.`,
   cantGetAvgPrice: (symbol: string) => `Couldn't get ${symbol} average price.`,

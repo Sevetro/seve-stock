@@ -38,11 +38,11 @@ export const BestDividends = ({ enabled, setEnabled, setBestDividends, setSymbol
         const bestDividends = await window.electron.getBestDividends(bestDividendsCount);
         if (bestDividends === undefined || bestDividends.length === 0) throw new Error(uiErrors.noBestDividends);
 
-        const bestDividendsWithValue = bestDividends.map(({ dividendYield, name, symbol }) => (
+        const bestDividendsWithValue = bestDividends.map(({ dividend, name, symbol }) => (
           {
-            name: `${name} - ${dividendYield.toFixed(0)}%`,
+            name: `${name} - ${dividend.toFixed(0)}%`,
             symbol,
-            dividendYield
+            dividend
           }
         ));
 

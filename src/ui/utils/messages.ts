@@ -25,8 +25,7 @@ export function isInvalidCheapStocksError({ msg, source, details }: Message) {
       msg === errors.cantGetCurrentPrice(details.symbol));
 }
 
-export function isStaleBestDividendsError({ msg, source, details }: Message) {
-  return source === 'getDividendYield' &&
-    details?.symbol !== undefined &&
+export function isStaleBestDividendsError({ msg, details }: Message) {
+  return details?.symbol !== undefined &&
     msg === errors.freshQuoteUnavailable(details.symbol);
 }
