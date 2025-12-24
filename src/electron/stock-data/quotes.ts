@@ -1,7 +1,7 @@
 import fs from 'fs';
 import path from 'path';
 import { WebContents } from 'electron';
-import { Quote } from 'yahoo-finance2/modules/quote';
+import { QuoteEquity } from 'yahoo-finance2/modules/quote';
 
 import { dataCacheDirname } from './constants.js';
 import { YahooFinanceType } from '../main.js';
@@ -11,39 +11,56 @@ import { getBiggerNumber, timestampParser } from './utils.js';
 import { logs } from '../shared-with-ui/logs.js';
 import { differenceInMinutes } from 'date-fns';
 import { staleQuoteMinutes } from './config.js';
-import { errors, getErrorMsg, isError } from '../shared-with-ui/errors.js';
+import { errors, isError } from '../shared-with-ui/errors.js';
 
 const stockQuotesCachePath = path.join(dataCacheDirname, 'stock-quotes');
 
 async function fetchQuote(symbol: string, yahooFinance: YahooFinanceType, webContents: WebContents) {
   try {
-    const quote = await yahooFinance.quote(`${symbol}.WA`, {
+    const quoteAllInfo = await yahooFinance.quote(`${symbol}.WA`, {
       fields: [
-        'regularMarketPrice', 'dividendYield', 'trailingAnnualDividendYield', 'priceToBook', 'marketCap'
+        'regularMarketPrice', 'dividendYield', 'trailingAnnualDividendYield',
+        'priceToBook', 'marketCap', 'trailingPE', 'epsTrailingTwelveMonths'
       ]
-    }) as Quote | undefined;
+    }) as QuoteEquity | undefined;
 
-    if (quote == null) throw new Error(errors.cantFetchQuote(symbol));
-    const { regularMarketPrice: price, dividendYield, trailingAnnualDividendYield, priceToBook, marketCap } = quote;
+    if (quoteAllInfo === undefined) throw new Error(errors.cantFetchQuote(symbol));
 
-    const trailingAnnualDividendYieldPercent = Number((trailingAnnualDividendYield * 100).toFixed(2));
+    const { regularMarketPrice, dividendYield, trailingAnnualDividendYield,
+      priceToBook, marketCap, sharesOutstanding, trailingPE, epsTrailingTwelveMonths } = quoteAllInfo;
+
+    if (
+      regularMarketPrice === undefined ||
+      marketCap === undefined ||
+      priceToBook === undefined ||
+      sharesOutstanding === undefined ||
+      epsTrailingTwelveMonths === undefined
+    ) throw new Error(errors.invalidQuote(symbol));
+
+    const trailingAnnualDividendYieldPercent = Number(((trailingAnnualDividendYield ?? 0) * 100).toFixed(2));
     const biggerDividendValue = getBiggerNumber(dividendYield, trailingAnnualDividendYieldPercent);
     const dividend = biggerDividendValue === 0 ? undefined : biggerDividendValue;
+    const bookValue = marketCap / priceToBook;
+    const priceToEarnings = trailingPE === undefined ? regularMarketPrice / epsTrailingTwelveMonths : trailingPE;
 
-    const now = new Date();
-    const stockQuote = {
-      timestamp: now,
-      price,
+    const quote: Quote = {
+      price: regularMarketPrice,
       dividend,
       marketCap,
-      priceToBook
+      bookValue,
+      priceToBook,
+      priceToEarnings
+    };
+    const quoteWithTimestamp = {
+      timestamp: new Date(),
+      ...quote
     };
 
     fs.mkdirSync(stockQuotesCachePath, { recursive: true });
     const filePath = path.join(stockQuotesCachePath, `${symbol}.json`);
-    fs.writeFileSync(filePath, JSON.stringify(stockQuote, null, 2));
+    fs.writeFileSync(filePath, JSON.stringify(quoteWithTimestamp, null, 2));
 
-    return { price, dividend, priceToBook, marketCap };
+    return quote;
   } catch (err) {
     printAndSendError(webContents, fetchQuote.name, err);
   }
@@ -55,17 +72,14 @@ export async function getQuote(symbol: string, yahooFinance: YahooFinanceType, w
   try {
     const rawData = fs.readFileSync(filePath, 'utf-8');
     const parsedData: StockQuoteCache = JSON.parse(rawData, timestampParser);
-    const { timestamp, price, dividend, priceToBook, marketCap } = parsedData;
-    if (price === undefined || price === 0) throw new Error(errors.invalidQuote(symbol));
-
-    const quote = { price, dividend, priceToBook, marketCap };
+    const { timestamp, ...quote } = parsedData;
 
     const minutesSinceUpdate = differenceInMinutes(new Date(), timestamp);
     if (minutesSinceUpdate >= staleQuoteMinutes) {
       printAndSendLog(webContents, getQuote.name, logs.staleQuote(symbol));
 
       const freshQuote = await fetchQuote(symbol, yahooFinance, webContents);
-      if (freshQuote?.price === undefined || freshQuote?.price === 0) {
+      if (freshQuote === undefined) {
         printAndSendMsg(webContents, { msg: errors.freshQuoteUnavailable(symbol), source: getQuote.name, type: 'error', details: { symbol } });
         return quote;
       } else {
@@ -78,10 +92,6 @@ export async function getQuote(symbol: string, yahooFinance: YahooFinanceType, w
   } catch (err) {
     if (isError(err) && 'code' in err && err.code === 'ENOENT') {
       printAndSendLog(webContents, getQuote.name, logs.quoteCacheNotFound(symbol));
-      return await fetchQuote(symbol, yahooFinance, webContents);
-    }
-    else if (getErrorMsg(err) === errors.invalidQuote(symbol)) {
-      printAndSendError(webContents, getQuote.name, err);
       return await fetchQuote(symbol, yahooFinance, webContents);
     }
     else {

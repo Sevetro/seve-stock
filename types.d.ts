@@ -44,10 +44,12 @@ interface StockDataRecord {
 type CompanyStockData = StockDataRecord[]
 
 interface Quote {
-  price: number;
-  dividend?: number;
-  priceToBook: number;
-  marketCap: number;
+  price: number
+  priceToBook: number
+  marketCap: number
+  bookValue: number
+  dividend?: number
+  priceToEarnings?: number
 }
 
 interface Message {

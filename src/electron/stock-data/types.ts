@@ -15,10 +15,6 @@ interface CompanyWithStockData {
 }
 export type PreparedData = Record<string, CompanyWithStockData>
 
-export interface StockQuoteCache {
+export interface StockQuoteCache extends Quote {
   timestamp: Date
-  price: number
-  dividend?: number
-  priceToBook: number
-  marketCap: number
 }
