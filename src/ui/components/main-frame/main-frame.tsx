@@ -64,11 +64,15 @@ export const MainFrame = ({ hasCheapStocksWarning, areBestDividendsStale }: Main
   return (
     <main className={mainFrame}>
       <aside className={infoCard}>
+        <div>Symbol: {symbol}</div>
         <div>Current price: {quote?.price}</div>
-        <div>Discount: {getPercentage(currentPriceToAvg(quote?.price, getAvgPrice(companyStockData)))}</div>
+        <div>Price change: {getPercentage(currentPriceToAvg(quote?.price, getAvgPrice(companyStockData)))}</div>
         <div>Dividend: {quote?.dividend && `${quote?.dividend}%`}</div>
         <div>Price to book: {getPercentage(quote?.priceToBook)}</div>
         <div>Market cap: {formatter.format(quote?.marketCap ?? 0)}</div>
+        <div>Book value: {formatter.format(quote?.bookValue ?? 0)}</div>
+        <div>Price to earnings: {quote?.priceToEarnings?.toFixed(2)}</div>
+
       </aside>
 
       <section className={tickerCard}>
