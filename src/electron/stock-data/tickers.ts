@@ -118,8 +118,7 @@ export async function getTickers(webContents: WebContents, yahooFinance: YahooFi
     } else if (getErrorMsg(err) === errors.tickersCacheEmpty) {
       printAndSendError(webContents, getTickers.name, err);
       return await combineScrappers(webContents, yahooFinance);
-    }
-    else {
+    } else {
       printAndSendError(webContents, getTickers.name, err);
     }
   }

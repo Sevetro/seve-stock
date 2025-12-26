@@ -1,4 +1,4 @@
-import { app, BrowserWindow } from 'electron';
+import { app, BrowserWindow, webContents } from 'electron';
 import YahooFinance from 'yahoo-finance2';
 
 import { ipcMainHandle, isDev } from './utils/core.js';
@@ -8,6 +8,7 @@ import { getHistoricStockData } from './stock-data/historic-stock-data.js';
 import { getBestDividends, getCheapStocks } from './stock-data/formulas.js';
 import { getQuote } from './stock-data/quotes.js';
 import { FundamentalsTimeSeriesFinancialsResult } from 'yahoo-finance2/modules/fundamentalsTimeSeries';
+import { getTtmFinancialData } from './stock-data/financials.js';
 
 const yahooFinance = new YahooFinance({ suppressNotices: ['yahooSurvey'] });
 export type YahooFinanceType = typeof yahooFinance;
@@ -41,64 +42,66 @@ app.whenReady().then(async () => {
   ipcMainHandle('getBestDividends', (count) =>
     getBestDividends(count, webContents, yahooFinance));
 
-  const elo = await getQuote('PKP', yahooFinance, webContents);
+  // const elo = await getQuote('PKP', yahooFinance, webContents);
   // const elo = await yahooFinance.quote('PEP.WA');
   // console.log(elo);
 
-  function logInfo(data: any) {
-    console.log('date:', data.date);
-    console.log('totalRevenue:', data.totalRevenue.toLocaleString('eng').slice(0, -8));
-    console.log('operatingRevenue:', data.operatingRevenue.toLocaleString('eng').slice(0, -8));
-    console.log('totalExpenses:', data.totalExpenses.toLocaleString('eng').slice(0, -8));
-    console.log('costOfRevenue:', data.costOfRevenue.toLocaleString('eng').slice(0, -8));
-    console.log('grossProfit:', data.grossProfit.toLocaleString('eng').slice(0, -8));
-    console.log('operatingIncome:', data.operatingIncome.toLocaleString('eng').slice(0, -8));
-    console.log('EBITDA:', data.EBITDA.toLocaleString('eng').slice(0, -8));
-    console.log('EBIT:', data.EBIT.toLocaleString('eng').slice(0, -8));
-    console.log('netIncome:', data.netIncome.toLocaleString('eng').slice(0, -8));
-    console.log('operatingExpense:', data.operatingExpense.toLocaleString('eng').slice(0, -8));
+  const tickers = await getTickers(webContents, yahooFinance)
+  console.log(tickers)
+
+
+  const data = []
+  for (const ticker of tickers!) {
+    const financialData = await getTtmFinancialData(ticker.symbol, yahooFinance);
+    console.log('symbol:', ticker.symbol)
+    data.push(financialData);
   }
+
+  console.log(data)
 
   async function getTtmData(symbol: string) {
     const period1 = new Date(Date.now() - 366 * 24 * 60 * 60 * 1000).toISOString().split('T')[0];
 
-    const unfilteredResults = await yahooFinance.fundamentalsTimeSeries(symbol, {
+    const financialResults = (await yahooFinance.fundamentalsTimeSeries(symbol, {
       period1,
       module: 'financials',
-      type: 'annual'
-    });
+      type: 'trailing'
+    }
+      , {
+        validateResult: false
+      }
+    )).filter((item: any): item is FundamentalsTimeSeriesFinancialsResult => item.TYPE === 'FINANCIALS');;
 
-    // just for typescript
-    const financialResults: FundamentalsTimeSeriesFinancialsResult[] = unfilteredResults.filter(
-      (item): item is FundamentalsTimeSeriesFinancialsResult => item.TYPE === 'FINANCIALS'
-    );
 
-    // console.log(financialResults[0]);
+    console.log('ALL =====================================');
+    console.log(financialResults)
 
-    logInfo(financialResults[0]);
+    console.log('length:', financialResults.length);
 
-    // console.log('1 =====================================');
     // logInfo(financialResults[0]);
-    // console.log('2 =====================================');
-    // logInfo(financialResults[1]);
-    // console.log('3 =====================================');
-    // logInfo(financialResults[2]);
-    // console.log('4 =====================================');
-    // logInfo(financialResults[3]);
+
+    console.log('1 =====================================');
+    logInfo(financialResults[0]);
+    console.log('2 =====================================');
+    logInfo(financialResults[1]);
+    console.log('3 =====================================');
+    logInfo(financialResults[2]);
+    console.log('4 =====================================');
+    logInfo(financialResults[3]);
 
     // in MLN
-    //  totalRevenue 
-    //  operatingRevenue 
-    //  totalExpenses 
-    //  costOfRevenue 
+    //  totalRevenue
+    //  operatingRevenue
+    //  totalExpenses
+    //  costOfRevenue
     //  grossProfit = revenue - costOfRevenue
     //  operatingExpense
     //  operatingIncome = revenue - totalExpenses || grossProfit - operatingExpense (zysk ze sprzedaży)
-    //  EBITDA 
-    //  EBIT 
-    //  netIncome (zysk netto) 
+    //  EBITDA
+    //  EBIT
+    //  netIncome (zysk netto)
 
-    const ttmFinancialResult = financialResults.slice(-4).reduce((acc, q) => {
+    const ttmFinancialResult = financialResults.slice(-4).reduce((acc: any, q: any) => {
       // if (q.totalRevenue === undefined ||
       //   q.operatingRevenue === undefined ||
       //   q.operatingExpense === undefined ||
@@ -122,15 +125,33 @@ app.whenReady().then(async () => {
       operatingIncome: 0, EBITDA: 0
     });
 
+    console.log('TTM =====================================');
+    logInfo(ttmFinancialResult)
+
     return {
       ...ttmFinancialResult,
       operatingMargin: (ttmFinancialResult.EBIT / ttmFinancialResult.totalRevenue * 100).toFixed(2)
     };
   }
 
-  const ttmFinancialResult = await getTtmData('PKN.WA');
+
 
   mainWindow.on('closed', () => {
     app.quit();
   });
 });
+
+
+function logInfo(data: any) {
+  console.log('date:', data.date);
+  console.log('totalRevenue:', data.totalRevenue.toLocaleString('eng').slice(0, -8).replace(',', ' '));
+  console.log('operatingRevenue:', data.operatingRevenue.toLocaleString('eng').slice(0, -8).replace(',', ' '));
+  console.log('totalExpenses:', data.totalExpenses.toLocaleString('eng').slice(0, -8).replace(',', ' '));
+  console.log('costOfRevenue:', data.costOfRevenue.toLocaleString('eng').slice(0, -8).replace(',', ' '));
+  console.log('grossProfit:', data.grossProfit.toLocaleString('eng').slice(0, -8).replace(',', ' '));
+  console.log('operatingExpense:', data.operatingExpense.toLocaleString('eng').slice(0, -8).replace(',', ' '));
+  console.log('operatingIncome:', data.operatingIncome.toLocaleString('eng').slice(0, -8).replace(',', ' '));
+  console.log('EBITDA:', data.EBITDA.toLocaleString('eng').slice(0, -8).replace(',', ' '));
+  console.log('EBIT:', data.EBIT.toLocaleString('eng').slice(0, -8).replace(',', ' '));
+  console.log('netIncome:', data.netIncome.toLocaleString('eng').slice(0, -8).replace(',', ' '));
+}
