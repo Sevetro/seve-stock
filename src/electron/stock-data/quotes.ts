@@ -7,7 +7,7 @@ import { dataCacheDirname } from './constants.js';
 import { YahooFinanceType } from '../main.js';
 import { printAndSendError, printAndSendLog, printAndSendMsg } from '../utils/message.js';
 import { StockQuoteCache } from './types.js';
-import { getBiggerNumber, timestampParser } from './utils.js';
+import { timestampParser } from './utils.js';
 import { logs } from '../shared-with-ui/logs.js';
 import { differenceInMinutes } from 'date-fns';
 import { staleQuoteMinutes } from './config.js';
@@ -15,19 +15,40 @@ import { errors, isError } from '../shared-with-ui/errors.js';
 
 const stockQuotesCachePath = path.join(dataCacheDirname, 'stock-quotes');
 
+async function getTtmDividend(
+  yahooSymbol: string,
+  yahooFinance: YahooFinanceType,
+  webContents: WebContents
+) {
+  try {
+    const today = new Date();
+    const period1 = new Date(today.setFullYear(today.getFullYear() - 1)).toISOString().slice(0, 10);
+    const chartData = await yahooFinance.chart(yahooSymbol, {
+      period1,
+      events: 'dividends'
+    });
+
+    return chartData.events?.dividends?.reduce((acc, dividend) => {
+      acc += dividend.amount;
+      return acc;
+    }, 0);
+  } catch (err) {
+    printAndSendError(webContents, getTtmDividend.name, err);
+  }
+}
+
 async function fetchQuote(symbol: string, yahooFinance: YahooFinanceType, webContents: WebContents) {
   try {
     const quoteAllInfo = await yahooFinance.quote(`${symbol}.WA`, {
       fields: [
-        'regularMarketPrice', 'dividendYield', 'trailingAnnualDividendYield',
-        'priceToBook', 'marketCap', 'trailingPE', 'epsTrailingTwelveMonths'
+        'regularMarketPrice', 'priceToBook', 'marketCap', 'trailingPE', 'epsTrailingTwelveMonths'
       ]
     }) as QuoteEquity | undefined;
 
     if (quoteAllInfo === undefined) throw new Error(errors.cantFetchQuote(symbol));
 
-    const { regularMarketPrice, dividendYield, trailingAnnualDividendYield,
-      priceToBook, marketCap, sharesOutstanding, trailingPE, epsTrailingTwelveMonths } = quoteAllInfo;
+    const { regularMarketPrice, priceToBook, marketCap, sharesOutstanding,
+      trailingPE, epsTrailingTwelveMonths } = quoteAllInfo;
 
     if (
       regularMarketPrice === undefined ||
@@ -37,15 +58,23 @@ async function fetchQuote(symbol: string, yahooFinance: YahooFinanceType, webCon
       epsTrailingTwelveMonths === undefined
     ) throw new Error(errors.invalidQuote(symbol));
 
-    const trailingAnnualDividendYieldPercent = (trailingAnnualDividendYield ?? 0) * 100;
-    const biggerDividendValue = getBiggerNumber(dividendYield, trailingAnnualDividendYieldPercent);
-    const dividend = biggerDividendValue === 0 ? undefined : Number(biggerDividendValue?.toFixed(1));
+    const quoteSummary = await yahooFinance.quoteSummary(symbol + '.WA', {
+      modules: ['summaryDetail']
+    });
+    const fiveYearAvgDividend = quoteSummary.summaryDetail?.fiveYearAvgDividendYield;
+
+    const ttmDividend = await getTtmDividend(symbol + '.WA', yahooFinance, webContents);
+    const dividend = ttmDividend === undefined
+      ? undefined
+      : Number((ttmDividend / regularMarketPrice * 100).toFixed(1));
+
     const bookValue = marketCap / priceToBook;
     const priceToEarnings = trailingPE === undefined ? regularMarketPrice / epsTrailingTwelveMonths : trailingPE;
 
     const quote: Quote = {
       price: regularMarketPrice,
       dividend,
+      fiveYearAvgDividend,
       marketCap,
       bookValue,
       priceToBook,

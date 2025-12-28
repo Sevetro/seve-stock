@@ -60,6 +60,7 @@ interface Quote {
   marketCap: number
   bookValue: number
   dividend?: number
+  fiveYearAvgDividend?: number
   priceToEarnings?: number
 }
 

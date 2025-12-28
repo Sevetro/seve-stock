@@ -8,6 +8,7 @@ export function timestampParser(key: string, value: unknown) {
   return key === 'timestamp' ? new Date(value as string) : value;
 }
 
+// not used?
 export function getBiggerNumber(num1: number | undefined, num2: number | undefined) {
   if (num1 === undefined && num2 === undefined) return;
   if (num1 === undefined || (num2 !== undefined && num2 >= num1)) return num2;
