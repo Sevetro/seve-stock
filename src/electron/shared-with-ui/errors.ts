@@ -14,10 +14,13 @@ export const errors = {
   cantGetYahooQuotes: 'Couldn\'t fetch quotes from Yahoo.',
   cantFetchQuote: (symbol: string) => `Couldn't fetch ${symbol} quote.`,
   invalidQuote: (symbol: string) => `${symbol} quote is invalid.`,
-  freshQuoteUnavailable: (symbol: string) => `Fresh ${symbol} quote unavailable, using stale quote from cache.`,
+  freshQuoteUnavailable: (symbol: string) => `Fresh ${symbol} quote unavailable, using stale data from cache.`,
   cantGetCurrentPrice: (symbol: string) => `Couldn't get ${symbol} current price.`,
   cantGetAvgPrice: (symbol: string) => `Couldn't get ${symbol} average price.`,
-  cantGetTickers: 'Couldn\'t get any tickers.'
+  cantGetTickers: 'Couldn\'t get any tickers.',
+  cantFetchTtmFinancialData: (symbol: string) => `Couldn't fetch TTM financial data for ${symbol}`,
+  notEnoughFinancialQuarters: (symbol: string) => `Couldn't fetch enough financial quarters for ${symbol}`,
+  freshTtmFinancialDataUnavailable: (symbol: string) => `Fresh ${symbol} financial data unavailable, using stale data from cache.`
 } as const;
 
 export function isError(err: unknown): err is Error {

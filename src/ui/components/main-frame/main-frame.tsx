@@ -6,24 +6,19 @@ import { useTickers, useCompanyStockData, useQuote } from '../../hooks';
 import { CandleChart } from '../candle-chart/candle-chart';
 import { createCandlestickData } from '../candle-chart/candle-chart.utils';
 import {
-  functionsCard, infoCard, mainFrame, mainFrameControls, tickerCard
+  functionsCard, leftAside, mainFrame, mainFrameControls, tickerCard
 } from './main-frame.module.scss';
 import { convertNativeDateToStooqDate } from '../../../electron/shared-with-ui/date';
-import {
-  currentPriceToAvg, getAvgPrice, getPercentage, getTickersSelectOptions, periodSelectOptions
-} from './main-frame.utils';
+import { getTickersSelectOptions, periodSelectOptions } from './main-frame.utils';
 import { CheapStocks } from '../cheap-stocks';
 import { BestDividends } from '../best-dividends';
+import { useTtmFinancialData } from '../../hooks/use-ttm-financial-data';
+import { InfoCard } from '../info-card';
 
 interface MainFrameProps {
   hasCheapStocksWarning: boolean
   areBestDividendsStale: boolean
 }
-
-const formatter = new Intl.NumberFormat('en', {
-  notation: 'compact',
-  compactDisplay: 'long'
-});
 
 export const MainFrame = ({ hasCheapStocksWarning, areBestDividendsStale }: MainFrameProps) => {
   const tickers = useTickers();
@@ -32,6 +27,8 @@ export const MainFrame = ({ hasCheapStocksWarning, areBestDividendsStale }: Main
   const stooqStartDate = convertNativeDateToStooqDate(subDays(new Date(), Number(period)));
   const companyStockData = useCompanyStockData(symbol, stooqStartDate);
   const quote = useQuote(symbol);
+  const ttmFinancialData = useTtmFinancialData(symbol);
+
   const [cheapStocks, setCheapStocks] = useState<CheapStocks>();
   const [cheapStocksEnabled, setCheapStocksEnabled] = useState(false);
   const [bestDividends, setBestDividends] = useState<BestDividends>();
@@ -63,16 +60,13 @@ export const MainFrame = ({ hasCheapStocksWarning, areBestDividendsStale }: Main
 
   return (
     <main className={mainFrame}>
-      <aside className={infoCard}>
-        <div>Symbol: {symbol}</div>
-        <div>Current price: {quote?.price}</div>
-        <div>Price change: {getPercentage(currentPriceToAvg(quote?.price, getAvgPrice(companyStockData)))}</div>
-        <div>Dividend: {quote?.dividend && `${quote?.dividend}%`}</div>
-        <div>Price to book: {getPercentage(quote?.priceToBook)}</div>
-        <div>Market cap: {formatter.format(quote?.marketCap ?? 0)}</div>
-        <div>Book value: {formatter.format(quote?.bookValue ?? 0)}</div>
-        <div>Price to earnings: {quote?.priceToEarnings?.toFixed(2)}</div>
-
+      <aside className={leftAside}>
+        <InfoCard
+          symbol={symbol}
+          quote={quote}
+          companyStockData={companyStockData}
+          ttmFinancialData={ttmFinancialData}
+        />
       </aside>
 
       <section className={tickerCard}>

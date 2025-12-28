@@ -3,6 +3,7 @@ interface Window {
     getTickers: EventFunction<'getTickers'>
     getCompanyStockData: EventFunction<'getCompanyStockData'>
     getQuote: EventFunction<'getQuote'>
+    getTtmFinancialData: EventFunction<'getTtmFinancialData'>
     getCheapStocks: EventFunction<'getCheapStocks'>
     getBestDividends: EventFunction<'getBestDividends'>
 
@@ -14,6 +15,7 @@ interface EventMap {
   getTickers: { args: [], payload: Promise<Tickers | undefined> }
   getCompanyStockData: { args: [symbol: string, stooqStartDate: string], payload: Promise<CompanyStockData | undefined> }
   getQuote: { args: [symbol: string], payload: Promise<Quote | undefined> }
+  getTtmFinancialData: { args: [symbol: string], payload: Promise<TtmFinancialData | undefined> }
   getCheapStocks: { args: [stooqStartDate: string, count: number], payload: Promise<CheapStocks | undefined> }
   getBestDividends: { args: [count: number], payload: Promise<BestDividends | undefined> }
 
@@ -26,6 +28,15 @@ type EventFunction<Key extends keyof EventMap> =
 type UnsubscribeFn = () => void;
 type EventSubscription<Key extends keyof EventMap> =
   (callback: (payload: EventMap[Key]['payload']) => void) => UnsubscribeFn;
+
+interface Message {
+  type: 'log' | 'error'
+  source: string
+  msg: string
+  details?: {
+    symbol?: string
+  }
+}
 
 interface Ticker {
   symbol: string
@@ -52,13 +63,20 @@ interface Quote {
   priceToEarnings?: number
 }
 
-interface Message {
-  type: 'log' | 'error'
-  source: string
-  msg: string
-  details?: {
-    symbol?: string
-  }
+interface RawTtmFinancialData {
+  totalRevenue: number
+  grossProfit: number
+  operatingIncome: number
+  EBITDA: number
+  EBIT: number
+  netIncome: number
+}
+
+interface TtmFinancialData extends RawTtmFinancialData {
+  grossProfitMargin: number
+  operatingMargin: number
+  ebitMargin: number
+  netIncomeMargin: number
 }
 
 interface CheapStock extends Ticker {

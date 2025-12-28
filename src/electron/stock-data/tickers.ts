@@ -18,6 +18,7 @@ const biggest100Regex = /data-rowkey="GPW:([A-Z]+)/g;
 const pageBiggest100 = 'https://pl.tradingview.com/markets/stocks-poland/market-movers-large-cap/';
 const pageWig140 = 'https://www.biznesradar.pl/gielda/indeks:WIG140';
 
+// return some strange companies with no data on yahoo
 async function scrapBiggestSymbols(webContents: WebContents) {
   try {
     const res = await fetch(pageBiggest100);
@@ -60,7 +61,8 @@ async function scrapWig140Symbols(webContents: WebContents) {
 async function combineScrappers(webContents: WebContents, yahooFinance: YahooFinanceType) {
   try {
     const symbolsWig140 = await scrapWig140Symbols(webContents);
-    const symbols100Biggest = await scrapBiggestSymbols(webContents);
+    const symbols100Biggest: any = []; // returning strange stocks like OPG.WA
+    // const symbols100Biggest = await scrapBiggestSymbols(webContents);
 
     if (symbolsWig140 === undefined || symbols100Biggest === undefined) throw new Error('Cant combine scrappers TODO');
 

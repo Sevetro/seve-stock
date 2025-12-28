@@ -1,4 +1,4 @@
-import { app, BrowserWindow, webContents } from 'electron';
+import { app, BrowserWindow } from 'electron';
 import YahooFinance from 'yahoo-finance2';
 
 import { ipcMainHandle, isDev } from './utils/core.js';
@@ -7,7 +7,6 @@ import { getTickers } from './stock-data/tickers.js';
 import { getHistoricStockData } from './stock-data/historic-stock-data.js';
 import { getBestDividends, getCheapStocks } from './stock-data/formulas.js';
 import { getQuote } from './stock-data/quotes.js';
-import { FundamentalsTimeSeriesFinancialsResult } from 'yahoo-finance2/modules/fundamentalsTimeSeries';
 import { getTtmFinancialData } from './stock-data/financials.js';
 
 const yahooFinance = new YahooFinance({ suppressNotices: ['yahooSurvey'] });
@@ -37,121 +36,14 @@ app.whenReady().then(async () => {
     getHistoricStockData(symbol, stooqStartDate, webContents));
   ipcMainHandle('getQuote', (symbol) =>
     getQuote(symbol, yahooFinance, webContents));
+  ipcMainHandle('getTtmFinancialData', (symbol) =>
+    getTtmFinancialData(symbol, yahooFinance, webContents));
   ipcMainHandle('getCheapStocks', (stooqStartDate: string, count: number) =>
     getCheapStocks(stooqStartDate, count, webContents, yahooFinance));
   ipcMainHandle('getBestDividends', (count) =>
     getBestDividends(count, webContents, yahooFinance));
 
-  // const elo = await getQuote('PKP', yahooFinance, webContents);
-  // const elo = await yahooFinance.quote('PEP.WA');
-  // console.log(elo);
-
-  const tickers = await getTickers(webContents, yahooFinance)
-  console.log(tickers)
-
-
-  const data = []
-  for (const ticker of tickers!) {
-    const financialData = await getTtmFinancialData(ticker.symbol, yahooFinance);
-    console.log('symbol:', ticker.symbol)
-    data.push(financialData);
-  }
-
-  console.log(data)
-
-  async function getTtmData(symbol: string) {
-    const period1 = new Date(Date.now() - 366 * 24 * 60 * 60 * 1000).toISOString().split('T')[0];
-
-    const financialResults = (await yahooFinance.fundamentalsTimeSeries(symbol, {
-      period1,
-      module: 'financials',
-      type: 'trailing'
-    }
-      , {
-        validateResult: false
-      }
-    )).filter((item: any): item is FundamentalsTimeSeriesFinancialsResult => item.TYPE === 'FINANCIALS');;
-
-
-    console.log('ALL =====================================');
-    console.log(financialResults)
-
-    console.log('length:', financialResults.length);
-
-    // logInfo(financialResults[0]);
-
-    console.log('1 =====================================');
-    logInfo(financialResults[0]);
-    console.log('2 =====================================');
-    logInfo(financialResults[1]);
-    console.log('3 =====================================');
-    logInfo(financialResults[2]);
-    console.log('4 =====================================');
-    logInfo(financialResults[3]);
-
-    // in MLN
-    //  totalRevenue
-    //  operatingRevenue
-    //  totalExpenses
-    //  costOfRevenue
-    //  grossProfit = revenue - costOfRevenue
-    //  operatingExpense
-    //  operatingIncome = revenue - totalExpenses || grossProfit - operatingExpense (zysk ze sprzedaży)
-    //  EBITDA
-    //  EBIT
-    //  netIncome (zysk netto)
-
-    const ttmFinancialResult = financialResults.slice(-4).reduce((acc: any, q: any) => {
-      // if (q.totalRevenue === undefined ||
-      //   q.operatingRevenue === undefined ||
-      //   q.operatingExpense === undefined ||
-      //   q.netIncome === undefined) throw new Error('TODO');
-
-      acc.EBIT += q.EBIT!;
-      acc.totalRevenue += q.totalRevenue!;
-      acc.operatingRevenue += q.operatingRevenue!;
-      acc.netIncome += q.netIncome!;
-      acc.totalExpenses += q.totalExpenses!;
-      acc.costOfRevenue += q.costOfRevenue!;
-      acc.grossProfit += q.grossProfit!;
-      acc.operatingExpense += q.operatingExpense!;
-      acc.operatingIncome += q.operatingIncome!;
-      acc.EBITDA += q.EBITDA!;
-
-      return acc;
-    }, {
-      EBIT: 0, totalRevenue: 0, operatingRevenue: 0, netIncome: 0,
-      operatingExpense: 0, totalExpenses: 0, costOfRevenue: 0, grossProfit: 0,
-      operatingIncome: 0, EBITDA: 0
-    });
-
-    console.log('TTM =====================================');
-    logInfo(ttmFinancialResult)
-
-    return {
-      ...ttmFinancialResult,
-      operatingMargin: (ttmFinancialResult.EBIT / ttmFinancialResult.totalRevenue * 100).toFixed(2)
-    };
-  }
-
-
-
   mainWindow.on('closed', () => {
     app.quit();
   });
 });
-
-
-function logInfo(data: any) {
-  console.log('date:', data.date);
-  console.log('totalRevenue:', data.totalRevenue.toLocaleString('eng').slice(0, -8).replace(',', ' '));
-  console.log('operatingRevenue:', data.operatingRevenue.toLocaleString('eng').slice(0, -8).replace(',', ' '));
-  console.log('totalExpenses:', data.totalExpenses.toLocaleString('eng').slice(0, -8).replace(',', ' '));
-  console.log('costOfRevenue:', data.costOfRevenue.toLocaleString('eng').slice(0, -8).replace(',', ' '));
-  console.log('grossProfit:', data.grossProfit.toLocaleString('eng').slice(0, -8).replace(',', ' '));
-  console.log('operatingExpense:', data.operatingExpense.toLocaleString('eng').slice(0, -8).replace(',', ' '));
-  console.log('operatingIncome:', data.operatingIncome.toLocaleString('eng').slice(0, -8).replace(',', ' '));
-  console.log('EBITDA:', data.EBITDA.toLocaleString('eng').slice(0, -8).replace(',', ' '));
-  console.log('EBIT:', data.EBIT.toLocaleString('eng').slice(0, -8).replace(',', ' '));
-  console.log('netIncome:', data.netIncome.toLocaleString('eng').slice(0, -8).replace(',', ' '));
-}

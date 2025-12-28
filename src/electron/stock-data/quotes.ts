@@ -37,9 +37,9 @@ async function fetchQuote(symbol: string, yahooFinance: YahooFinanceType, webCon
       epsTrailingTwelveMonths === undefined
     ) throw new Error(errors.invalidQuote(symbol));
 
-    const trailingAnnualDividendYieldPercent = Number(((trailingAnnualDividendYield ?? 0) * 100).toFixed(2));
+    const trailingAnnualDividendYieldPercent = (trailingAnnualDividendYield ?? 0) * 100;
     const biggerDividendValue = getBiggerNumber(dividendYield, trailingAnnualDividendYieldPercent);
-    const dividend = biggerDividendValue === 0 ? undefined : biggerDividendValue;
+    const dividend = biggerDividendValue === 0 ? undefined : Number(biggerDividendValue?.toFixed(1));
     const bookValue = marketCap / priceToBook;
     const priceToEarnings = trailingPE === undefined ? regularMarketPrice / epsTrailingTwelveMonths : trailingPE;
 
@@ -93,8 +93,7 @@ export async function getQuote(symbol: string, yahooFinance: YahooFinanceType, w
     if (isError(err) && 'code' in err && err.code === 'ENOENT') {
       printAndSendLog(webContents, getQuote.name, logs.quoteCacheNotFound(symbol));
       return await fetchQuote(symbol, yahooFinance, webContents);
-    }
-    else {
+    } else {
       printAndSendError(webContents, getQuote.name, err);
     }
   }
