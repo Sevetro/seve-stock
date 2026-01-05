@@ -14,3 +14,9 @@ export function getBiggerNumber(num1: number | undefined, num2: number | undefin
   if (num1 === undefined || (num2 !== undefined && num2 >= num1)) return num2;
   if (num2 === undefined || (num1 !== undefined && num1 >= num2)) return num1;
 }
+
+export function inMinMaxRange(value: number | undefined, min?: number, max?: number) {
+  return value !== undefined &&
+    (min === undefined || value >= min) &&
+    (max === undefined || value <= max);
+}

@@ -1,0 +1,1 @@
+export { MinMaxFilter } from './min-max-filter';

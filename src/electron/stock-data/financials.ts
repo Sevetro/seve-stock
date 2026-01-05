@@ -28,12 +28,15 @@ async function fetchTtmFinancialData(
       type: 'trailing'
     }, {
       validateResult: false
-    })).filter((item: any): item is FundamentalsTimeSeriesFinancialsResult => item.TYPE === 'FINANCIALS');
+    })).filter(
+      (item: any): item is FundamentalsTimeSeriesFinancialsResult => item.TYPE === 'FINANCIALS'
+    );
 
     if (ttmFinancialResults?.[0] === undefined) throw new Error(errors.cantFetchTtmFinancialData(yahooSymbol));
 
-    const { totalRevenue, grossProfit, operatingIncome, EBITDA,
-      EBIT, netIncome }: RawTtmFinancialData = ttmFinancialResults[0];
+    const {
+      totalRevenue, grossProfit, operatingIncome, EBITDA, EBIT, netIncome
+    }: RawTtmFinancialData = ttmFinancialResults[0];
 
     const ttmFinancialData: TtmFinancialData = {
       totalRevenue,
@@ -78,7 +81,7 @@ export async function getTtmFinancialData(
 
     const hoursSinceUpdate = differenceInHours(new Date(), timestamp);
     if (hoursSinceUpdate >= staleTtmFinancialDataHours) {
-      printAndSendLog(webContents, getTtmFinancialData.name, logs.staleTtmFinancialData(symbol));
+      // printAndSendLog(webContents, getTtmFinancialData.name, logs.staleTtmFinancialData(symbol));
 
       const freshTtmFinancialData = await fetchTtmFinancialData(symbol + '.WA', yahooFinance, webContents);
       if (freshTtmFinancialData === undefined) {
@@ -104,75 +107,5 @@ export async function getTtmFinancialData(
     } else {
       printAndSendError(webContents, getTtmFinancialData.name, err);
     }
-  }
-}
-
-async function getLast4FinancialQuarters(
-  yahooSymbol: string,
-  yahooFinance: YahooFinanceType,
-  webContents: WebContents
-) {
-  const period1 = new Date(Date.now() - 366 * 24 * 60 * 60 * 1000).toISOString().split('T')[0];
-
-  try {
-    const financialResults = (await yahooFinance.fundamentalsTimeSeries(yahooSymbol, {
-      period1,
-      module: 'financials'
-    })).filter((item): item is FundamentalsTimeSeriesFinancialsResult => item.TYPE === 'FINANCIALS');
-
-    if (financialResults.length < 4) {
-      throw new Error(errors.notEnoughFinancialQuarters(yahooSymbol));
-    }
-
-    // logInfo(financialResults[0]);
-
-    // console.log('1 =====================================');
-    // logInfo(financialResults[0]);
-    // console.log('2 =====================================');
-    // logInfo(financialResults[1]);
-    // console.log('3 =====================================');
-    // logInfo(financialResults[2]);
-    // console.log('4 =====================================');
-    // logInfo(financialResults[3]);
-
-    //  totalRevenue
-    //  operatingRevenue
-    //  totalExpenses
-    //  costOfRevenue
-    //  grossProfit = revenue - costOfRevenue
-    //  operatingExpense
-    //  operatingIncome = revenue - totalExpenses || grossProfit - operatingExpense (zysk ze sprzedaży)
-    //  EBITDA
-    //  EBIT
-    //  netIncome (zysk netto)
-
-    const ttmFinancialResult = financialResults.slice(-4).reduce((acc, q) => {
-      acc.EBIT += q.EBIT!;
-      acc.totalRevenue += q.totalRevenue!;
-      acc.operatingRevenue += q.operatingRevenue!;
-      acc.netIncome += q.netIncome!;
-      acc.totalExpenses += q.totalExpenses!;
-      acc.costOfRevenue += q.costOfRevenue!;
-      acc.grossProfit += q.grossProfit!;
-      acc.operatingExpense += q.operatingExpense!;
-      acc.operatingIncome += q.operatingIncome!;
-      acc.EBITDA += q.EBITDA!;
-
-      return acc;
-    }, {
-      EBIT: 0, totalRevenue: 0, operatingRevenue: 0, netIncome: 0,
-      operatingExpense: 0, totalExpenses: 0, costOfRevenue: 0, grossProfit: 0,
-      operatingIncome: 0, EBITDA: 0
-    });
-
-    // console.log('TTM =====================================');
-    // logInfo(ttmFinancialResult);
-
-    return {
-      ...ttmFinancialResult,
-      operatingMargin: (ttmFinancialResult.EBIT / ttmFinancialResult.totalRevenue * 100).toFixed(2)
-    };
-  } catch (err) {
-    printAndSendError(webContents, getLast4FinancialQuarters.name, err);
   }
 }

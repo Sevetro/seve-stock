@@ -5,10 +5,10 @@ import { contextBridge, ipcRenderer } from "electron";
 contextBridge.exposeInMainWorld("electron", {
   getTickers: async () => ipcRendererInvoke('getTickers'),
   getCompanyStockData: async (symbol, stooqStartDate) => ipcRendererInvoke('getCompanyStockData', symbol, stooqStartDate),
-  getQuote: async (symbol) => ipcRendererInvoke('getQuote', symbol),
-  getTtmFinancialData: async (symbol) => ipcRendererInvoke('getTtmFinancialData', symbol),
+  getCombinedInfo: async (symbol, stooqStartDate) => ipcRendererInvoke('getCombinedInfo', symbol, stooqStartDate),
   getCheapStocks: async (stooqStartDate, count) => ipcRendererInvoke('getCheapStocks', stooqStartDate, count),
   getBestDividends: async (count) => ipcRendererInvoke('getBestDividends', count),
+  getAdvancedFiltersResult: async (advancedFilters, stooqStartDate) => ipcRendererInvoke('getAdvancedFiltersResult', advancedFilters, stooqStartDate),
 
   subscribeToMessages: (callback) => ipcRendererOn('message', msg => callback(msg))
 } satisfies Window["electron"]);

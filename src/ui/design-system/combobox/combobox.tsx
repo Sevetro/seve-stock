@@ -12,7 +12,7 @@ import { matchSorter } from 'match-sorter';
 import { CheckIcon, ChevronDownIcon, MagnifyingGlassIcon } from '@radix-ui/react-icons';
 
 import {
-  combobox, comboboxIcon, comboboxWrapper, item, itemIndicator, listbox, popover, trigger,
+  combobox, comboboxIcon, comboboxWrapper, emptyOptions, item, itemIndicator, listbox, popover, trigger,
   triggerIcon, triggerOpen
 } from './combobox.module.scss';
 
@@ -34,8 +34,10 @@ interface ComboboxProps {
   contentAria?: string
 }
 
-export const Combobox = memo(({ placeholder, options, value, setValue, width,
-  searchPlaceholder, triggerAria, contentAria }: ComboboxProps) => {
+export const Combobox = memo(({
+  placeholder, options, value, setValue, width,
+  searchPlaceholder, triggerAria, contentAria
+}: ComboboxProps) => {
   const [open, setOpen] = useState(false);
   const [searchValue, setSearchValue] = useState('');
   const listRef = useRef<HTMLDivElement>(null);
@@ -85,7 +87,7 @@ export const Combobox = memo(({ placeholder, options, value, setValue, width,
         }}
       >
         <RadixSelect.Trigger
-          className={`${trigger} ${open ? triggerOpen : ''}`}
+          className={`${trigger} ${open ? triggerOpen : ''} ${options.length === 0 ? emptyOptions : ''}`}
           style={{ width: width ?? 'auto' }}
           aria-label={triggerAria}
         >

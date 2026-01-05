@@ -1,19 +1,17 @@
 .button {
+  flex: 1;
+  text-align: center;
   padding: 10px 20px;
-  border-radius: 12px;
+  border-radius: 10px;
   color: rgba(255, 255, 255, 0.9);
   cursor: pointer;
-
   border: 1px solid rgba(255, 255, 255, 0.12);
-
   box-shadow:
     inset 0 0 8px rgba(0, 180, 255, 0.08),
     0 0 10px rgba(0, 160, 255, 0.14);
-
   background: linear-gradient(135deg,
       rgba(0, 160, 255, 0.12),
       rgba(0, 120, 255, 0.12));
-
   transition:
     background 0.15s ease,
     box-shadow 0.15s ease,
@@ -23,7 +21,6 @@
     background: linear-gradient(135deg,
         rgba(0, 180, 255, 0.17),
         rgba(0, 140, 255, 0.20));
-
     box-shadow:
       inset 0 0 10px rgba(0, 180, 255, 0.14),
       0 0 16px rgba(0, 160, 255, 0.20);
@@ -31,7 +28,6 @@
 
   &:focus {
     border: 1px solid rgba(0, 160, 255, 0.28);
-
     box-shadow:
       0 0 10px rgba(0, 160, 255, 0.28);
   }
@@ -40,5 +36,11 @@
     box-shadow:
       inset 0 0 14px rgba(0, 170, 255, 0.28),
       0 0 8px rgba(0, 150, 255, 0.18);
+  }
+
+  &:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+    pointer-events: none;
   }
 }

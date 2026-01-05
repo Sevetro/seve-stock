@@ -34,10 +34,18 @@ export default tseslint.config([
       "no-multiple-empty-lines": ["error", { "max": 1, "maxBOF": 0, "maxEOF": 0 }],
       "eol-last": ["error", "never"], //WARN: this may cause issues
       "object-curly-newline": ["error", {
-        "ImportDeclaration": {
-          "minProperties": 5,
-          "multiline": true,
-          "consistent": true
+        ImportDeclaration: {
+          minProperties: 5,
+          multiline: true,
+          consistent: true
+        },
+        ObjectPattern: {
+          multiline: true,
+          consistent: true,
+        },
+        ObjectExpression: {
+          multiline: true,
+          consistent: true,
         },
       }],
 

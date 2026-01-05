@@ -2,22 +2,40 @@ interface Window {
   electron: {
     getTickers: EventFunction<'getTickers'>
     getCompanyStockData: EventFunction<'getCompanyStockData'>
-    getQuote: EventFunction<'getQuote'>
-    getTtmFinancialData: EventFunction<'getTtmFinancialData'>
+    getCombinedInfo: EventFunction<'getCombinedInfo'>
     getCheapStocks: EventFunction<'getCheapStocks'>
     getBestDividends: EventFunction<'getBestDividends'>
+    getAdvancedFiltersResult: EventFunction<'getAdvancedFiltersResult'>
 
     subscribeToMessages: EventSubscription<'message'>
   };
 }
 
 interface EventMap {
-  getTickers: { args: [], payload: Promise<Tickers | undefined> }
-  getCompanyStockData: { args: [symbol: string, stooqStartDate: string], payload: Promise<CompanyStockData | undefined> }
-  getQuote: { args: [symbol: string], payload: Promise<Quote | undefined> }
-  getTtmFinancialData: { args: [symbol: string], payload: Promise<TtmFinancialData | undefined> }
-  getCheapStocks: { args: [stooqStartDate: string, count: number], payload: Promise<CheapStocks | undefined> }
-  getBestDividends: { args: [count: number], payload: Promise<BestDividends | undefined> }
+  getTickers: {
+    args: [],
+    payload: Promise<Tickers | undefined>
+  }
+  getCompanyStockData: {
+    args: [symbol: string, stooqStartDate: string],
+    payload: Promise<CompanyStockData | undefined>
+  }
+  getCombinedInfo: {
+    args: [symbol: string, stooqStartDate: string],
+    payload: Promise<CombinedInfo | undefined>
+  }
+  getCheapStocks: {
+    args: [stooqStartDate: string, count: number],
+    payload: Promise<CheapStocks | undefined>
+  }
+  getBestDividends: {
+    args: [count: number],
+    payload: Promise<BestDividends | undefined>
+  }
+  getAdvancedFiltersResult: {
+    args: [advancedFilters: Partial<AdvancedFilters>, stooqStartDate: string],
+    payload: Promise<Tickers | undefined>
+  }
 
   message: { args: [], payload: Message }
 }
@@ -59,10 +77,10 @@ interface Quote {
   priceToBook: number
   marketCap: number
   bookValue: number
-  dividend?: number
-  fiveYearAvgDividend?: number
-  priceToEarnings?: number
+  priceToEarnings: number
 }
+
+type Dividend = number | undefined
 
 interface RawTtmFinancialData {
   totalRevenue: number
@@ -80,6 +98,11 @@ interface TtmFinancialData extends RawTtmFinancialData {
   netIncomeMargin: number
 }
 
+interface CombinedInfo extends Quote, TtmFinancialData {
+  dividend: Dividend
+  priceChange: number
+}
+
 interface CheapStock extends Ticker {
   discount: number
 }
@@ -89,3 +112,12 @@ interface BestDividend extends Ticker {
   dividend: number
 }
 type BestDividends = BestDividend[]
+
+type AdvancedFiltersKey = 'dividend' | 'marketCap' | 'bookValue' | 'priceToEarnings' | 'priceToBook' | 'priceChange'
+
+interface MinMax {
+  min: number | undefined
+  max: number | undefined
+}
+
+type AdvancedFilters = Record<AdvancedFiltersKey, MinMax>

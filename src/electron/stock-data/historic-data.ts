@@ -1,12 +1,12 @@
 import path from 'path';
 import fs from 'fs';
-import { differenceInMinutes, subYears } from 'date-fns';
+import { differenceInHours, subYears } from 'date-fns';
 import { WebContents } from 'electron';
 
 import { dataCacheDirname } from './constants.js';
 import { StockRecordCache } from './types.js';
 import { convertStringDateToStooqDate, timestampParser } from './utils.js';
-import { fetchingPeriodYears, staleStockDataMinutes } from './config.js';
+import { fetchingPeriodYears, staleStockDataHours } from './config.js';
 import { printAndSendError, printAndSendLog, printAndSendMsg } from '../utils/message.js';
 import { errors, getErrorMsg, isError } from '../shared-with-ui/errors.js';
 import { logs } from '../shared-with-ui/logs.js';
@@ -14,7 +14,7 @@ import { convertNativeDateToStooqDate } from '../shared-with-ui/date.js';
 
 const historicCachePath = path.join(dataCacheDirname, 'historic');
 
-function createStockDataObject(record: string): StockDataRecord {
+function createHistoricDataObject(record: string): StockDataRecord {
   const recordData = record.split(',');
   const open = parseFloat(recordData[1]);
   const high = parseFloat(recordData[2]);
@@ -32,7 +32,7 @@ function createStockDataObject(record: string): StockDataRecord {
   };
 }
 
-async function fetchHistoricStockData(symbol: string, webContents: WebContents) {
+async function fetchHistoricData(symbol: string, webContents: WebContents) {
   const today = convertNativeDateToStooqDate(new Date());
   const startDate = convertNativeDateToStooqDate(subYears(new Date(), fetchingPeriodYears));
   const url = `https://stooq.com/q/d/l/?s=${symbol}&d1=${startDate}&d2=${today}&i=d`;
@@ -48,7 +48,7 @@ async function fetchHistoricStockData(symbol: string, webContents: WebContents) 
 
     const records = data.trim().split(/\r?\n/);
     records.shift();
-    const stockData = records.map(record => createStockDataObject(record));
+    const stockData = records.map(record => createHistoricDataObject(record));
     const today = new Date();
 
     const stockDataWithTimestamp = {
@@ -62,12 +62,12 @@ async function fetchHistoricStockData(symbol: string, webContents: WebContents) 
 
     return stockData;
   } catch (err) {
-    printAndSendError(webContents, fetchHistoricStockData.name, err);
+    printAndSendError(webContents, fetchHistoricData.name, err);
   }
 }
 
 // Name of the function used in error recognition
-export async function getHistoricStockData(symbol: string, stooqStartDate: string, webContents: WebContents) {
+export async function getHistoricData(symbol: string, stooqStartDate: string, webContents: WebContents) {
   const endDate = convertNativeDateToStooqDate(new Date());
   let finalStockData: CompanyStockData | undefined;
   const filePath = path.join(historicCachePath, `${symbol}.json`);
@@ -77,18 +77,18 @@ export async function getHistoricStockData(symbol: string, stooqStartDate: strin
     const parsedData: StockRecordCache = JSON.parse(rawData, timestampParser);
     const { timestamp, stockData } = parsedData;
 
-    if (stockData.length === 0) throw new Error(logs.emptyTickerCache(symbol));
+    if (stockData.length === 0) throw new Error(logs.emptyHistoricDataCache(symbol));
 
-    const minutesSinceUpdate = differenceInMinutes(new Date(), timestamp);
+    const hoursSinceUpdate = differenceInHours(new Date(), timestamp);
 
-    if (minutesSinceUpdate >= staleStockDataMinutes) {
-      printAndSendLog(webContents, getHistoricStockData.name, logs.stockDataStale(symbol));
-      const freshStockData = await fetchHistoricStockData(symbol, webContents);
+    if (hoursSinceUpdate >= staleStockDataHours) {
+      // printAndSendLog(webContents, getHistoricData.name, logs.stockDataStale(symbol));
+      const freshStockData = await fetchHistoricData(symbol, webContents);
 
       if (freshStockData === undefined || freshStockData.length === 0) {
         printAndSendMsg(webContents, {
           msg: errors.freshStockDataUnavailable(symbol),
-          source: getHistoricStockData.name,
+          source: getHistoricData.name,
           type: 'error',
           details: { symbol }
         });
@@ -102,15 +102,15 @@ export async function getHistoricStockData(symbol: string, stooqStartDate: strin
     }
   } catch (err) {
     if (isError(err) && 'code' in err && err.code === 'ENOENT') {
-      printAndSendLog(webContents, getHistoricStockData.name, logs.tickerCacheNotFound(symbol));
-      finalStockData = await fetchHistoricStockData(symbol, webContents);
+      printAndSendLog(webContents, getHistoricData.name, logs.historicCacheNotFound(symbol));
+      finalStockData = await fetchHistoricData(symbol, webContents);
     }
-    else if (getErrorMsg(err) === logs.emptyTickerCache(symbol)) {
-      printAndSendLog(webContents, getHistoricStockData.name, logs.emptyTickerCache(symbol));
-      finalStockData = await fetchHistoricStockData(symbol, webContents);
+    else if (getErrorMsg(err) === logs.emptyHistoricDataCache(symbol)) {
+      printAndSendLog(webContents, getHistoricData.name, logs.emptyHistoricDataCache(symbol));
+      finalStockData = await fetchHistoricData(symbol, webContents);
     }
     else {
-      printAndSendError(webContents, getHistoricStockData.name, err);
+      printAndSendError(webContents, getHistoricData.name, err);
     }
   }
 
