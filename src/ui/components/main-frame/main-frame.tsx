@@ -1,61 +1,80 @@
-import { useMemo, useState } from 'react';
+import { useState } from 'react';
 import { subDays } from 'date-fns';
 
 import { Combobox, Select } from '../../design-system';
-import { useTickers, useCompanyStockData, useQuote } from '../../hooks';
+import { useTickers, useCompanyStockData } from '../../hooks';
 import { CandleChart } from '../candle-chart/candle-chart';
 import { createCandlestickData } from '../candle-chart/candle-chart.utils';
 import {
-  functionsCard, leftAside, mainFrame, mainFrameControls, tickerCard
+  filtersCard, leftAside, mainFrame, mainFrameControls, tickerCard
 } from './main-frame.module.scss';
 import { convertNativeDateToStooqDate } from '../../../electron/shared-with-ui/date';
 import { getTickersSelectOptions, periodSelectOptions } from './main-frame.utils';
-import { CheapStocks } from '../cheap-stocks';
-import { BestDividends } from '../best-dividends';
-import { useTtmFinancialData } from '../../hooks/use-ttm-financial-data';
 import { InfoCard } from '../info-card';
+import { BasicFilters } from '../basic-filters';
+import { AdvancedFilters } from '../advanced-filters';
+import { FilterTabs, type FilterTab } from '../filter-tabs';
+
+type StockModule = 'cheapStocks' | 'bestDividends' | 'advancedFilters'
 
 interface MainFrameProps {
   hasCheapStocksWarning: boolean
   areBestDividendsStale: boolean
 }
 
-export const MainFrame = ({ hasCheapStocksWarning, areBestDividendsStale }: MainFrameProps) => {
-  const tickers = useTickers();
-  const [symbol, setSymbol] = useState('PKN');
+export const MainFrame = ({
+  hasCheapStocksWarning, areBestDividendsStale
+}: MainFrameProps) => {
+  const allTickers = useTickers();
+  const [symbol, setSymbol] = useState('');
   const [period, setPeriod] = useState('30');
   const stooqStartDate = convertNativeDateToStooqDate(subDays(new Date(), Number(period)));
   const companyStockData = useCompanyStockData(symbol, stooqStartDate);
-  const quote = useQuote(symbol);
-  const ttmFinancialData = useTtmFinancialData(symbol);
 
+  const [activeFiltersTab, setActiveFiltersTab] = useState<FilterTab>('basic');
+  const [enabledModule, setEnabledModule] = useState<StockModule>();
   const [cheapStocks, setCheapStocks] = useState<CheapStocks>();
-  const [cheapStocksEnabled, setCheapStocksEnabled] = useState(false);
   const [bestDividends, setBestDividends] = useState<BestDividends>();
-  const [bestDividendsEnabled, setBestDividendsEnabled] = useState(false);
+  const [advancedFiltersTickers, setAdvancedFiltersTickers] = useState<Tickers>();
 
-  const tickerSelectOptions = useMemo(() => (
-    cheapStocksEnabled
-      ? getTickersSelectOptions(cheapStocks)
-      : bestDividendsEnabled
-        ? getTickersSelectOptions(bestDividends)
-        : getTickersSelectOptions(tickers)),
-    [bestDividends, bestDividendsEnabled, cheapStocks, cheapStocksEnabled, tickers]
-  );
+  let currentTickers: Tickers | undefined;
+
+  switch (enabledModule) {
+    case 'cheapStocks':
+      currentTickers = cheapStocks;
+      break;
+    case 'bestDividends':
+      currentTickers = bestDividends;
+      break;
+    case 'advancedFilters':
+      currentTickers = advancedFiltersTickers;
+      break;
+    default:
+      currentTickers = allTickers;
+  }
+
+  const tickerSelectOptions = getTickersSelectOptions(currentTickers);
 
   function handlePeriodChange(value: string) {
-    if (cheapStocksEnabled) setCheapStocksEnabled(false);
+    if (enabledModule === 'cheapStocks') setEnabledModule(undefined);
     setPeriod(value);
   }
 
-  function handleCheapStocksToggle(enable: boolean) {
-    if (enable && bestDividendsEnabled) setBestDividendsEnabled(false);
-    setCheapStocksEnabled(enable);
+  function changeFiltersTab(tab: FilterTab) {
+    setEnabledModule(undefined);
+    setActiveFiltersTab(tab);
   }
 
-  function handleBestDividendsToggle(enable: boolean) {
-    if (enable && cheapStocksEnabled) setCheapStocksEnabled(false);
-    setBestDividendsEnabled(enable);
+  function toggleCheapStocks(enable: boolean) {
+    setEnabledModule(enable ? 'cheapStocks' : undefined);
+  }
+
+  function toggleBestDividends(enable: boolean) {
+    setEnabledModule(enable ? 'bestDividends' : undefined);
+  }
+
+  function toggleAdvancedFilters(enable: boolean) {
+    setEnabledModule(enable ? 'advancedFilters' : undefined);
   }
 
   return (
@@ -63,16 +82,14 @@ export const MainFrame = ({ hasCheapStocksWarning, areBestDividendsStale }: Main
       <aside className={leftAside}>
         <InfoCard
           symbol={symbol}
-          quote={quote}
-          companyStockData={companyStockData}
-          ttmFinancialData={ttmFinancialData}
+          stooqStartDate={stooqStartDate}
         />
       </aside>
 
       <section className={tickerCard}>
         <header className={mainFrameControls}>
           <Combobox
-            placeholder='Ticker'
+            placeholder='Select ticker...'
             options={tickerSelectOptions}
             value={symbol}
             setValue={setSymbol}
@@ -88,25 +105,37 @@ export const MainFrame = ({ hasCheapStocksWarning, areBestDividendsStale }: Main
           />
         </header>
 
-        {<CandleChart data={createCandlestickData(companyStockData ?? [])} />}
+        {symbol !== '' && <CandleChart data={createCandlestickData(companyStockData ?? [])} />}
       </section>
 
-      <aside className={functionsCard}>
-        <CheapStocks
-          enabled={cheapStocksEnabled}
-          setEnabled={handleCheapStocksToggle}
-          stooqStartDate={stooqStartDate}
-          setCheapStocks={setCheapStocks}
-          setSymbol={setSymbol}
-          hasCheapStocksWarning={hasCheapStocksWarning}
+      <aside className={filtersCard}>
+        <FilterTabs
+          advancedFiltersEnabled={enabledModule === 'advancedFilters'}
+          activeFiltersTab={activeFiltersTab}
+          changeFiltersTab={changeFiltersTab}
         />
-        <BestDividends
-          enabled={bestDividendsEnabled}
-          setEnabled={handleBestDividendsToggle}
-          setBestDividends={setBestDividends}
-          setSymbol={setSymbol}
-          areBestDividendsStale={areBestDividendsStale}
-        />
+
+        {activeFiltersTab === 'basic' ?
+          <BasicFilters
+            areBestDividendsStale={areBestDividendsStale}
+            bestDividendsEnabled={enabledModule === 'bestDividends'}
+            cheapStocksEnabled={enabledModule === 'cheapStocks'}
+            toggleBestDividends={toggleBestDividends}
+            toggleCheapStocks={toggleCheapStocks}
+            hasCheapStocksWarning={hasCheapStocksWarning}
+            setBestDividends={setBestDividends}
+            setCheapStocks={setCheapStocks}
+            setSymbol={setSymbol}
+            stooqStartDate={stooqStartDate}
+          /> :
+          <AdvancedFilters
+            advancedFiltersEnabled={enabledModule === 'advancedFilters'}
+            toggleAdvancedFilters={toggleAdvancedFilters}
+            setAdvancedFiltersTickers={setAdvancedFiltersTickers}
+            setSymbol={setSymbol}
+            stooqStartDate={stooqStartDate}
+          />
+        }
       </aside>
     </main>
   );

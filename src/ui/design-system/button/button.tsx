@@ -1,14 +1,19 @@
-import type { PropsWithChildren } from 'react';
+import type { ComponentPropsWithoutRef } from 'react';
 
 import { button } from './button.module.scss';
 
-interface ButtonProps extends PropsWithChildren {
-  onClick: (event: React.MouseEvent<HTMLButtonElement>) => void;
-  size?: number
-}
+type ButtonProps = ComponentPropsWithoutRef<'button'>;
 
-export const Button = ({ children, onClick }: ButtonProps) => (
-  <button onClick={onClick} className={button}>
+export const Button = ({
+  children,
+  type = 'button',
+  ...props
+}: ButtonProps) => (
+  <button
+    {...props}
+    className={button}
+    type={type}
+  >
     {children}
   </button>
 );

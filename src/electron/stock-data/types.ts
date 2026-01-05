@@ -22,3 +22,8 @@ export interface StockQuoteCache extends Quote {
 export interface TtmFinancialDataCache extends TtmFinancialData {
   timestamp: Date
 }
+
+export interface DividendCache {
+  timestamp: Date
+  dividend?: Dividend
+}

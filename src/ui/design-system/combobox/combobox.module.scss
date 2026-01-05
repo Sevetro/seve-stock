@@ -22,6 +22,12 @@
   @include animateGlow($greenNeonShadow, $greenOutline);
 }
 
+.emptyOptions {
+  span {
+    opacity: 0.6;
+  }
+}
+
 .triggerOpen {
   box-shadow: $greenNeonShadow;
 }

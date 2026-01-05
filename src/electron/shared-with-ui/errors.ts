@@ -1,6 +1,6 @@
 export const errors = {
   unknownError: 'Unknown error occured.',
-  cantScrap: 'Couldn\'t scrap any tickers.',
+  cantGetWig140: 'The list of WIG140 tickers is invalid',
   tickersCacheEmpty: 'Tickers cache file is empty, trying to scrap...',
   usingStaleTickers: 'Unable to scrap fresh tickers, using stale data from cache.',
   responseNotOk: (status: number, symbol: string) => `HTTP ${status} for ${symbol}`,
@@ -8,10 +8,9 @@ export const errors = {
   exceededDailyHitsLimit: (symbol: string) => `Exceeded the daily hits limit when fetching ${symbol}.`,
   noAvailableStockData: (symbol: string) => `No available data for ${symbol}.`,
   freshStockDataUnavailable: (symbol: string) => `Fresh stock data for ${symbol} unavailable, using stale data from cache.`,
-  getAvgPriceStockDataUndefined: (symbol: string) => `Stock data for ${symbol} is undefined.`,
-  getAvgPriceStockDataEmpty: (symbol: string) => `Stock data for ${symbol} is empty.`,
+  cantGetHistoricData: (symbol: string) => `Can't get ${symbol} historic data.`,
   noAvailableTickers: 'No available tickers',
-  cantGetYahooQuotes: 'Couldn\'t fetch quotes from Yahoo.',
+  cantGetYahooQuotes: 'Couldn\'t fetch every quote from Yahoo.',
   cantFetchQuote: (symbol: string) => `Couldn't fetch ${symbol} quote.`,
   invalidQuote: (symbol: string) => `${symbol} quote is invalid.`,
   freshQuoteUnavailable: (symbol: string) => `Fresh ${symbol} quote unavailable, using stale data from cache.`,
@@ -20,7 +19,9 @@ export const errors = {
   cantGetTickers: 'Couldn\'t get any tickers.',
   cantFetchTtmFinancialData: (symbol: string) => `Couldn't fetch TTM financial data for ${symbol}`,
   notEnoughFinancialQuarters: (symbol: string) => `Couldn't fetch enough financial quarters for ${symbol}`,
-  freshTtmFinancialDataUnavailable: (symbol: string) => `Fresh ${symbol} financial data unavailable, using stale data from cache.`
+  freshTtmFinancialDataUnavailable: (symbol: string) => `Fresh ${symbol} financial data unavailable, using stale data from cache.`,
+  cantGetCombinedInfo: (symbol: string) => `Couldn't get combined info for ${symbol}`,
+  freshDividendUnavailable: (symbol: string) => `Fresh ${symbol} dividend data unavailable, using stale data from cache.`
 } as const;
 
 export function isError(err: unknown): err is Error {

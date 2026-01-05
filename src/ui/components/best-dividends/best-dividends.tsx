@@ -30,8 +30,8 @@ export const BestDividends = ({ enabled, setEnabled, setBestDividends, setSymbol
     setBestDividendsCountArr(count);
   }
 
-  async function handleBestDividendsToggle(checked: boolean) {
-    if (checked === true) {
+  async function handleBestDividendsToggle(enable: boolean) {
+    if (enable === true) {
       setBestDividendsLoading(true);
 
       try {

@@ -14,24 +14,7 @@ import { logs } from '../shared-with-ui/logs.js';
 import { YahooFinanceType } from '../main.js';
 
 const tickersCachePath = path.join(dataCacheDirname, 'tickers.json');
-const biggest100Regex = /data-rowkey="GPW:([A-Z]+)/g;
-const pageBiggest100 = 'https://pl.tradingview.com/markets/stocks-poland/market-movers-large-cap/';
 const pageWig140 = 'https://www.biznesradar.pl/gielda/indeks:WIG140';
-
-// return some strange companies with no data on yahoo
-async function scrapBiggestSymbols(webContents: WebContents) {
-  try {
-    const res = await fetch(pageBiggest100);
-    const html = await res.text();
-    const matchedData = [...html.matchAll(biggest100Regex)];
-
-    if (matchedData.length === 0) throw new Error(errors.cantScrap);
-
-    return matchedData.map(match => `${match[1]}.WA`);
-  } catch (err) {
-    printAndSendError(webContents, scrapBiggestSymbols.name, err);
-  }
-}
 
 async function scrapWig140Symbols(webContents: WebContents) {
   try {
@@ -50,29 +33,25 @@ async function scrapWig140Symbols(webContents: WebContents) {
       }
     });
 
-    if (matchedData.length === 0) throw new Error(errors.cantScrap);
+    if (matchedData.length !== 140) throw new Error(errors.cantGetWig140);
 
-    return matchedData.map(match => `${match}.WA`);
+    return matchedData;
   } catch (err) {
     printAndSendError(webContents, scrapWig140Symbols.name, err);
   }
 }
 
-async function combineScrappers(webContents: WebContents, yahooFinance: YahooFinanceType) {
+async function fetchTickers(webContents: WebContents, yahooFinance: YahooFinanceType) {
   try {
-    const symbolsWig140 = await scrapWig140Symbols(webContents);
-    const symbols100Biggest: any = []; // returning strange stocks like OPG.WA
-    // const symbols100Biggest = await scrapBiggestSymbols(webContents);
+    const wig140Symbols = await scrapWig140Symbols(webContents);
+    if (wig140Symbols === undefined) throw new Error(errors.cantGetWig140);
 
-    if (symbolsWig140 === undefined || symbols100Biggest === undefined) throw new Error('Cant combine scrappers TODO');
-
-    const newSet = new Set([...symbolsWig140, ...symbols100Biggest]);
-    const yahooSymbols = Array.from(newSet);
+    const yahooSymbols = wig140Symbols.map(symbol => symbol + '.WA');
 
     const tickers = (await yahooFinance.quote(yahooSymbols, { fields: ['shortName'] }))
-      .map(({ symbol, shortName }) => ({ symbol: (symbol as string).slice(0, 3), name: shortName }));
+      .map(({ symbol, shortName }) => ({ symbol: (symbol as string).slice(0, 3), name: shortName as string }));
 
-    if (tickers.length === 0) throw new Error(errors.cantGetYahooQuotes);
+    if (tickers.length !== yahooSymbols.length) throw new Error(errors.cantGetYahooQuotes);
 
     const today = new Date();
     const tickersWithTimestamp = {
@@ -85,7 +64,7 @@ async function combineScrappers(webContents: WebContents, yahooFinance: YahooFin
 
     return tickers;
   } catch (err) {
-    printAndSendError(webContents, combineScrappers.name, err);
+    printAndSendError(webContents, fetchTickers.name, err);
   }
 }
 
@@ -101,7 +80,7 @@ export async function getTickers(webContents: WebContents, yahooFinance: YahooFi
 
     if (daysSinceUpdate >= staleTickersDays) {
       printAndSendLog(webContents, getTickers.name, logs.tickersStale);
-      const freshTickers = await combineScrappers(webContents, yahooFinance);
+      const freshTickers = await fetchTickers(webContents, yahooFinance);
 
       if (freshTickers === undefined || freshTickers.length === 0) {
         printAndSendMsg(webContents, { msg: errors.usingStaleTickers, source: getTickers.name, type: 'error' });
@@ -116,10 +95,10 @@ export async function getTickers(webContents: WebContents, yahooFinance: YahooFi
   } catch (err) {
     if (isError(err) && 'code' in err && err.code === 'ENOENT') {
       printAndSendLog(webContents, getTickers.name, logs.tickersCacheMissing);
-      return await combineScrappers(webContents, yahooFinance);
+      return await fetchTickers(webContents, yahooFinance);
     } else if (getErrorMsg(err) === errors.tickersCacheEmpty) {
       printAndSendError(webContents, getTickers.name, err);
-      return await combineScrappers(webContents, yahooFinance);
+      return await fetchTickers(webContents, yahooFinance);
     } else {
       printAndSendError(webContents, getTickers.name, err);
     }

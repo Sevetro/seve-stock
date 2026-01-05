@@ -1,29 +1,56 @@
 import { WebContents } from 'electron';
 
-import { getHistoricStockData } from './historic-stock-data.js';
+import { getHistoricData } from './historic-data.js';
 import { errors } from '../shared-with-ui/errors.js';
-import { convertStringDateToStooqDate } from './utils.js';
-import { printAndSendError, printAndSendLog, printAndSendMsg } from '../utils/message.js';
-import { logs } from '../shared-with-ui/logs.js';
+import { inMinMaxRange } from './utils.js';
+import { printAndSendError, printAndSendMsg } from '../utils/message.js';
 import { getTickers } from './tickers.js';
 import { YahooFinanceType } from '../main.js';
 import { getQuote } from './quotes.js';
+import { getTtmFinancialData } from './financials.js';
+import { getDividend } from './dividend.js';
 
-export async function getAvgPrice(symbol: string, stooqStartDate: string, webContents: WebContents) {
+async function getAvgPrice(symbol: string, stooqStartDate: string, webContents: WebContents) {
   try {
-    const companyStockData = await getHistoricStockData(symbol, stooqStartDate, webContents);
+    const companyStockData = await getHistoricData(symbol, stooqStartDate, webContents);
 
-    if (companyStockData === undefined) throw new Error(errors.getAvgPriceStockDataUndefined(symbol));
-    if (companyStockData.length === 0) throw new Error(errors.getAvgPriceStockDataEmpty(symbol));
-
-    const earliestAvailableData = companyStockData[0].date;
-    if (convertStringDateToStooqDate(earliestAvailableData) > stooqStartDate) {
-      printAndSendLog(webContents, getAvgPrice.name, logs.earliestAvailableData(symbol, earliestAvailableData));
-    }
+    if (companyStockData === undefined || companyStockData.length === 0)
+      throw new Error(errors.cantGetHistoricData(symbol));
 
     return Number((companyStockData.reduce((acc, { avg }) => acc + avg, 0) / companyStockData.length).toFixed(2));
   } catch (err) {
     printAndSendError(webContents, getAvgPrice.name, err);
+  }
+}
+
+export async function getCombinedInfo(
+  symbol: string,
+  stooqStartDate: string,
+  yahooFinance: YahooFinanceType,
+  webContents: WebContents
+) {
+  try {
+    const quote = await getQuote(symbol, yahooFinance, webContents);
+    const ttmFinancialData = await getTtmFinancialData(symbol, yahooFinance, webContents);
+    const avgPrice = await getAvgPrice(symbol, stooqStartDate, webContents);
+
+    if (quote === undefined ||
+      ttmFinancialData === undefined ||
+      avgPrice === undefined) throw new Error(errors.cantGetCombinedInfo(symbol));
+
+    const dividend = await getDividend(symbol, yahooFinance, webContents);
+    const priceChange = quote.price / avgPrice * 100;
+
+    const combinedInfo: CombinedInfo = {
+      ...quote,
+      ...ttmFinancialData,
+      dividend,
+      priceChange
+    };
+
+    return combinedInfo;
+  } catch (err) {
+    printAndSendError(webContents, getCombinedInfo.name, err);
   }
 }
 
@@ -34,12 +61,11 @@ export async function getCheapStocks(
   try {
     const tickers = await getTickers(webContents, yahooFinance);
     if (tickers === undefined || tickers.length === 0) throw new Error(errors.cantGetTickers);
-    const symbols = tickers.map(ticker => ticker.symbol);
 
     const currentPrices: Record<string, number> = {};
     const validPricesSymbols: string[] = [];
     await Promise.all(
-      symbols.map(async symbol => {
+      tickers.map(async ({ symbol }) => {
         const currPrice = (await getQuote(symbol, yahooFinance, webContents))?.price;
         if (currPrice === undefined || currPrice === 0) {
           printAndSendMsg(webContents, { msg: errors.cantGetCurrentPrice(symbol), source: getCheapStocks.name, type: 'error', details: { symbol } });
@@ -79,11 +105,11 @@ export async function getCheapStocks(
 export async function getBestDividends(count: number, webContents: WebContents, yahooFinance: YahooFinanceType) {
   try {
     const tickers = await getTickers(webContents, yahooFinance);
-    if (tickers == null || tickers.length === 0) throw new Error(errors.cantGetTickers);
+    if (tickers === undefined || tickers.length === 0) throw new Error(errors.cantGetTickers);
 
     const bestDividends = await Promise.all(
       tickers.map(async ({ symbol, name }) => {
-        const dividend = (await getQuote(symbol, yahooFinance, webContents))?.dividend;
+        const dividend = await getDividend(symbol, yahooFinance, webContents);
         if (dividend != null) {
           return {
             symbol,
@@ -100,5 +126,39 @@ export async function getBestDividends(count: number, webContents: WebContents, 
       .slice(0, count);
   } catch (err) {
     printAndSendError(webContents, getBestDividends.name, err);
+  }
+}
+
+export async function getAdvancedFiltersResult(
+  advancedFilters: Partial<AdvancedFilters>,
+  stooqStartDate: string,
+  yahooFinance: YahooFinanceType,
+  webContents: WebContents
+) {
+  try {
+    const tickers = await getTickers(webContents, yahooFinance);
+    if (tickers == null || tickers.length === 0) throw new Error(errors.cantGetTickers);
+
+    const allStocksInfo = await Promise.all(
+      tickers.map(async ({ symbol, name }) => {
+        const combinedInfo = await getCombinedInfo(symbol, stooqStartDate, yahooFinance, webContents);
+        return {
+          symbol,
+          name,
+          ...combinedInfo
+        };
+      })
+    );
+
+    return allStocksInfo
+      .filter(company => Object.entries(advancedFilters)
+        .every(([key, { min, max }]) => {
+          const value = company[key as AdvancedFiltersKey];
+          return inMinMaxRange(value, min, max);
+        }))
+      .map((company) => ({ symbol: company!.symbol, name: company!.name }));
+
+  } catch (err) {
+    printAndSendError(webContents, getAdvancedFiltersResult.name, err);
   }
 }

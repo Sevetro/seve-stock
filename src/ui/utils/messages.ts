@@ -13,7 +13,7 @@ export function printUiError(source: string, err: unknown) {
 }
 
 export function isStaleStockDataUsageMessage({ msg, source, details }: Message) {
-  return source === 'getHistoricStockData' &&
+  return source === 'getHistoricData' &&
     details?.symbol !== undefined &&
     msg === errors.freshStockDataUnavailable(details.symbol);
 }
