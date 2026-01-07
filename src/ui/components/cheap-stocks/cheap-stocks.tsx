@@ -11,13 +11,20 @@ import { WarningIcon } from '../../design-system/icons';
 interface CheapStocksProps {
   enabled: boolean
   setEnabled: (enabled: boolean) => void
-  stooqStartDate: string
+  startDate: Date
   setCheapStocks: (cheapStocks: CheapStocks) => void
   setSymbol: (symbol: string) => void
   hasCheapStocksWarning: boolean
 }
 
-export const CheapStocks = ({ enabled, setEnabled, stooqStartDate, setCheapStocks, setSymbol, hasCheapStocksWarning }: CheapStocksProps) => {
+export const CheapStocks = ({
+  enabled,
+  setEnabled,
+  startDate,
+  setCheapStocks,
+  setSymbol,
+  hasCheapStocksWarning
+}: CheapStocksProps) => {
   const [cheapStocksCountArr, setCheapStocksCountArr] = useState([0]);
   const cheapStocksCount = cheapStocksCountArr[0];
   const [cheapStocksLoading, setCheapStocksLoading] = useState(false);
@@ -36,7 +43,7 @@ export const CheapStocks = ({ enabled, setEnabled, stooqStartDate, setCheapStock
       setCheapStocksLoading(true);
 
       try {
-        const cheapStocks = await window.electron.getCheapStocks(stooqStartDate, cheapStocksCount);
+        const cheapStocks = await window.electron.getCheapStocks(startDate, cheapStocksCount);
         if (cheapStocks === undefined || cheapStocks.length === 0) throw new Error(uiErrors.noCheapStocks);
 
         const cheapStocksWithValue = cheapStocks.map(({ discount, name, symbol }) => (

@@ -3,14 +3,23 @@ import { contextBridge, ipcRenderer } from "electron";
 // this happens in UI
 
 contextBridge.exposeInMainWorld("electron", {
-  getTickers: async () => ipcRendererInvoke('getTickers'),
-  getCompanyStockData: async (symbol, stooqStartDate) => ipcRendererInvoke('getCompanyStockData', symbol, stooqStartDate),
-  getCombinedInfo: async (symbol, stooqStartDate) => ipcRendererInvoke('getCombinedInfo', symbol, stooqStartDate),
-  getCheapStocks: async (stooqStartDate, count) => ipcRendererInvoke('getCheapStocks', stooqStartDate, count),
-  getBestDividends: async (count) => ipcRendererInvoke('getBestDividends', count),
-  getAdvancedFiltersResult: async (advancedFilters, stooqStartDate) => ipcRendererInvoke('getAdvancedFiltersResult', advancedFilters, stooqStartDate),
+  getTickers: async () =>
+    ipcRendererInvoke('getTickers'),
+  getHistoricData: async (symbol, startDate) =>
+    ipcRendererInvoke('getHistoricData', symbol, startDate),
+  getCombinedInfo: async (symbol, startDate) =>
+    ipcRendererInvoke('getCombinedInfo', symbol, startDate),
+  getCheapStocks: async (startDate, count) =>
+    ipcRendererInvoke('getCheapStocks', startDate, count),
+  getBestDividends: async (count) =>
+    ipcRendererInvoke('getBestDividends', count),
+  getBiggestGaps: async (startDate, count) =>
+    ipcRendererInvoke('getBiggestGaps', startDate, count),
+  getAdvancedFiltersResult: async (advancedFilters, startDate) =>
+    ipcRendererInvoke('getAdvancedFiltersResult', advancedFilters, startDate),
 
-  subscribeToMessages: (callback) => ipcRendererOn('message', msg => callback(msg))
+  subscribeToMessages: (callback) =>
+    ipcRendererOn('message', msg => callback(msg))
 } satisfies Window["electron"]);
 
 function ipcRendererInvoke<Key extends keyof EventMap>(

@@ -2,20 +2,19 @@ import { useState } from 'react';
 import { subDays } from 'date-fns';
 
 import { Combobox, Select } from '../../design-system';
-import { useTickers, useCompanyStockData } from '../../hooks';
+import { useTickers, useHistoricData } from '../../hooks';
 import { CandleChart } from '../candle-chart/candle-chart';
 import { createCandlestickData } from '../candle-chart/candle-chart.utils';
 import {
   filtersCard, leftAside, mainFrame, mainFrameControls, tickerCard
 } from './main-frame.module.scss';
-import { convertNativeDateToStooqDate } from '../../../electron/shared-with-ui/date';
 import { getTickersSelectOptions, periodSelectOptions } from './main-frame.utils';
 import { InfoCard } from '../info-card';
 import { BasicFilters } from '../basic-filters';
 import { AdvancedFilters } from '../advanced-filters';
 import { FilterTabs, type FilterTab } from '../filter-tabs';
 
-type StockModule = 'cheapStocks' | 'bestDividends' | 'advancedFilters'
+type StockModule = 'cheapStocks' | 'bestDividends' | 'biggestGaps' | 'advancedFilters'
 
 interface MainFrameProps {
   hasCheapStocksWarning: boolean
@@ -28,13 +27,14 @@ export const MainFrame = ({
   const allTickers = useTickers();
   const [symbol, setSymbol] = useState('');
   const [period, setPeriod] = useState('30');
-  const stooqStartDate = convertNativeDateToStooqDate(subDays(new Date(), Number(period)));
-  const companyStockData = useCompanyStockData(symbol, stooqStartDate);
+  const startDate = subDays(new Date(), Number(period));
+  const historicData = useHistoricData(symbol, startDate);
 
   const [activeFiltersTab, setActiveFiltersTab] = useState<FilterTab>('basic');
   const [enabledModule, setEnabledModule] = useState<StockModule>();
   const [cheapStocks, setCheapStocks] = useState<CheapStocks>();
   const [bestDividends, setBestDividends] = useState<BestDividends>();
+  const [biggestGaps, setBiggestGaps] = useState<BiggestGaps>();
   const [advancedFiltersTickers, setAdvancedFiltersTickers] = useState<Tickers>();
 
   let currentTickers: Tickers | undefined;
@@ -46,6 +46,9 @@ export const MainFrame = ({
     case 'bestDividends':
       currentTickers = bestDividends;
       break;
+    case 'biggestGaps':
+      currentTickers = biggestGaps;
+      break;
     case 'advancedFilters':
       currentTickers = advancedFiltersTickers;
       break;
@@ -56,7 +59,8 @@ export const MainFrame = ({
   const tickerSelectOptions = getTickersSelectOptions(currentTickers);
 
   function handlePeriodChange(value: string) {
-    if (enabledModule === 'cheapStocks') setEnabledModule(undefined);
+    if (enabledModule === 'cheapStocks'
+      || enabledModule === 'biggestGaps') setEnabledModule(undefined);
     setPeriod(value);
   }
 
@@ -73,6 +77,10 @@ export const MainFrame = ({
     setEnabledModule(enable ? 'bestDividends' : undefined);
   }
 
+  function toggleBiggestGaps(enable: boolean) {
+    setEnabledModule(enable ? 'biggestGaps' : undefined);
+  }
+
   function toggleAdvancedFilters(enable: boolean) {
     setEnabledModule(enable ? 'advancedFilters' : undefined);
   }
@@ -82,7 +90,7 @@ export const MainFrame = ({
       <aside className={leftAside}>
         <InfoCard
           symbol={symbol}
-          stooqStartDate={stooqStartDate}
+          startDate={startDate}
         />
       </aside>
 
@@ -105,7 +113,7 @@ export const MainFrame = ({
           />
         </header>
 
-        {symbol !== '' && <CandleChart data={createCandlestickData(companyStockData ?? [])} />}
+        {symbol !== '' && <CandleChart data={createCandlestickData(historicData ?? [])} />}
       </section>
 
       <aside className={filtersCard}>
@@ -117,23 +125,26 @@ export const MainFrame = ({
 
         {activeFiltersTab === 'basic' ?
           <BasicFilters
-            areBestDividendsStale={areBestDividendsStale}
-            bestDividendsEnabled={enabledModule === 'bestDividends'}
-            cheapStocksEnabled={enabledModule === 'cheapStocks'}
-            toggleBestDividends={toggleBestDividends}
-            toggleCheapStocks={toggleCheapStocks}
-            hasCheapStocksWarning={hasCheapStocksWarning}
-            setBestDividends={setBestDividends}
-            setCheapStocks={setCheapStocks}
             setSymbol={setSymbol}
-            stooqStartDate={stooqStartDate}
+            startDate={startDate}
+            bestDividendsEnabled={enabledModule === 'bestDividends'}
+            toggleBestDividends={toggleBestDividends}
+            setBestDividends={setBestDividends}
+            areBestDividendsStale={areBestDividendsStale}
+            cheapStocksEnabled={enabledModule === 'cheapStocks'}
+            toggleCheapStocks={toggleCheapStocks}
+            setCheapStocks={setCheapStocks}
+            hasCheapStocksWarning={hasCheapStocksWarning}
+            biggestGapsEnabled={enabledModule === 'biggestGaps'}
+            toggleBiggestGaps={toggleBiggestGaps}
+            setBiggestGaps={setBiggestGaps}
           /> :
           <AdvancedFilters
             advancedFiltersEnabled={enabledModule === 'advancedFilters'}
             toggleAdvancedFilters={toggleAdvancedFilters}
             setAdvancedFiltersTickers={setAdvancedFiltersTickers}
             setSymbol={setSymbol}
-            stooqStartDate={stooqStartDate}
+            startDate={startDate}
           />
         }
       </aside>

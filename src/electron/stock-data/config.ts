@@ -1,4 +1,4 @@
-export const staleStockDataHours = 4;
+export const staleHistoricDataHours = 4;
 export const staleTickersDays = 1;
 export const fetchingPeriodYears = 10;
 export const staleQuoteMinutes = 5;

@@ -9,17 +9,18 @@ const formatter = new Intl.NumberFormat('en', {
 
 interface InfoCardProps {
   symbol: string
-  stooqStartDate: string
+  startDate: Date
 }
 
-export const InfoCard = ({ symbol, stooqStartDate }: InfoCardProps) => {
-  const combinedInfo = useCombinedInfo(symbol, stooqStartDate);
+export const InfoCard = ({ symbol, startDate }: InfoCardProps) => {
+  const combinedInfo = useCombinedInfo(symbol, startDate);
 
   return (
     <div className={infoCard}>
       <div>Symbol: {symbol}</div>
       <div>Current price: {combinedInfo?.price}</div>
       <div>Price change: {combinedInfo?.priceChange.toFixed(0)}%</div>
+      <div>Price gap: {combinedInfo?.priceGap}%</div>
       <div>Dividend: {combinedInfo?.dividend && `${combinedInfo?.dividend}%`}</div>
       <div>Market cap: {formatter.format(combinedInfo?.marketCap ?? 0)}</div>
       <div>Book value: {formatter.format(combinedInfo?.bookValue ?? 0)}</div>
