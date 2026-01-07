@@ -17,7 +17,7 @@ interface AdvancedFiltersProps {
   toggleAdvancedFilters: (enable: boolean) => void
   setAdvancedFiltersTickers: (tickers: Tickers) => void
   setSymbol: (symbol: string) => void
-  stooqStartDate: string
+  startDate: Date
 }
 
 export const AdvancedFilters = ({
@@ -25,7 +25,7 @@ export const AdvancedFilters = ({
   toggleAdvancedFilters,
   setAdvancedFiltersTickers,
   setSymbol,
-  stooqStartDate
+  startDate
 }: AdvancedFiltersProps) => {
   const [filters, setFilters] = useState(initialFilters);
   const [isLoading, setIsLoading] = useState(false);
@@ -60,7 +60,7 @@ export const AdvancedFilters = ({
       Partial<Record<AdvancedFiltersKey, MinMax>>;
 
     try {
-      const filteredTickers = await window.electron.getAdvancedFiltersResult(adjustedFilters, stooqStartDate);
+      const filteredTickers = await window.electron.getAdvancedFiltersResult(adjustedFilters, startDate);
       if (filteredTickers === undefined || filteredTickers.length === 0) {
         setAdvancedFiltersTickers([]);
         setSymbol('');

@@ -1,19 +1,12 @@
-export interface StockRecordCache {
+export interface HistoricDataCache {
   timestamp: Date
-  stockData: CompanyStockData
+  historicData: HistoricData
 }
 
 export interface TickersCache {
   timestamp: Date
   tickers: Tickers
 }
-
-interface CompanyWithStockData {
-  company: string
-  fullname: string
-  stockData: CompanyStockData
-}
-export type PreparedData = Record<string, CompanyWithStockData>
 
 export interface StockQuoteCache extends Quote {
   timestamp: Date
@@ -25,5 +18,5 @@ export interface TtmFinancialDataCache extends TtmFinancialData {
 
 export interface DividendCache {
   timestamp: Date
-  dividend?: Dividend
+  dividend: Dividend
 }

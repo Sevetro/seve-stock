@@ -1,4 +1,5 @@
 import { BestDividends } from '../best-dividends';
+import { BiggestGaps } from '../biggest-gaps';
 import { CheapStocks } from '../cheap-stocks';
 import { basicFilterTabId } from '../filter-tabs';
 import { basicFilters } from './basic-filters.module.scss';
@@ -8,7 +9,7 @@ export const basicFilterPanelId = 'panel-basic';
 interface BasicFiltersProps {
   cheapStocksEnabled: boolean
   toggleCheapStocks: (enabled: boolean) => void
-  stooqStartDate: string
+  startDate: Date
   setCheapStocks: (cheapStocks: CheapStocks) => void
   setSymbol: (symbol: string) => void
   hasCheapStocksWarning: boolean
@@ -16,12 +17,17 @@ interface BasicFiltersProps {
   toggleBestDividends: (enabled: boolean) => void
   setBestDividends: (bestDividends: BestDividends) => void
   areBestDividendsStale: boolean
+  biggestGapsEnabled: boolean
+  toggleBiggestGaps: (enabled: boolean) => void
+  setBiggestGaps: (biggestGaps: BiggestGaps) => void
 }
 
 export const BasicFilters = ({
-  cheapStocksEnabled, toggleCheapStocks, stooqStartDate,
-  setCheapStocks, setSymbol, hasCheapStocksWarning, bestDividendsEnabled,
-  toggleBestDividends, setBestDividends, areBestDividendsStale
+  startDate, setSymbol,
+  cheapStocksEnabled, toggleCheapStocks, setCheapStocks, hasCheapStocksWarning,
+  bestDividendsEnabled, toggleBestDividends, setBestDividends, areBestDividendsStale,
+  biggestGapsEnabled, toggleBiggestGaps, setBiggestGaps
+
 }: BasicFiltersProps) =>
 (
   <section
@@ -33,7 +39,7 @@ export const BasicFilters = ({
     <CheapStocks
       enabled={cheapStocksEnabled}
       setEnabled={toggleCheapStocks}
-      stooqStartDate={stooqStartDate}
+      startDate={startDate}
       setCheapStocks={setCheapStocks}
       setSymbol={setSymbol}
       hasCheapStocksWarning={hasCheapStocksWarning}
@@ -44,6 +50,13 @@ export const BasicFilters = ({
       setBestDividends={setBestDividends}
       setSymbol={setSymbol}
       areBestDividendsStale={areBestDividendsStale}
+    />
+    <BiggestGaps
+      enabled={biggestGapsEnabled}
+      setEnabled={toggleBiggestGaps}
+      setBiggestGaps={setBiggestGaps}
+      setSymbol={setSymbol}
+      startDate={startDate}
     />
   </section>
 );

@@ -35,7 +35,7 @@ async function fetchDividend(
 
     const price = chartData.meta.regularMarketPrice;
     const dividend = ttmDividendsSum === undefined
-      ? undefined
+      ? 0
       : Number((ttmDividendsSum / price * 100).toFixed(1));
 
     const dividendDataWithTimestamp = {

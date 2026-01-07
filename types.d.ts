@@ -1,10 +1,11 @@
 interface Window {
   electron: {
     getTickers: EventFunction<'getTickers'>
-    getCompanyStockData: EventFunction<'getCompanyStockData'>
+    getHistoricData: EventFunction<'getHistoricData'>
     getCombinedInfo: EventFunction<'getCombinedInfo'>
     getCheapStocks: EventFunction<'getCheapStocks'>
     getBestDividends: EventFunction<'getBestDividends'>
+    getBiggestGaps: EventFunction<'getBiggestGaps'>
     getAdvancedFiltersResult: EventFunction<'getAdvancedFiltersResult'>
 
     subscribeToMessages: EventSubscription<'message'>
@@ -16,24 +17,28 @@ interface EventMap {
     args: [],
     payload: Promise<Tickers | undefined>
   }
-  getCompanyStockData: {
-    args: [symbol: string, stooqStartDate: string],
-    payload: Promise<CompanyStockData | undefined>
+  getHistoricData: {
+    args: [symbol: string, startDate: Date],
+    payload: Promise<HistoricData | undefined>
   }
   getCombinedInfo: {
-    args: [symbol: string, stooqStartDate: string],
+    args: [symbol: string, startDate: Date],
     payload: Promise<CombinedInfo | undefined>
   }
   getCheapStocks: {
-    args: [stooqStartDate: string, count: number],
+    args: [startDate: Date, count: number],
     payload: Promise<CheapStocks | undefined>
   }
   getBestDividends: {
     args: [count: number],
     payload: Promise<BestDividends | undefined>
   }
+  getBiggestGaps: {
+    args: [startDate: Date, count: number],
+    payload: Promise<BiggestGaps | undefined>
+  }
   getAdvancedFiltersResult: {
-    args: [advancedFilters: Partial<AdvancedFilters>, stooqStartDate: string],
+    args: [advancedFilters: Partial<AdvancedFilters>, startDate: Date],
     payload: Promise<Tickers | undefined>
   }
 
@@ -62,15 +67,15 @@ interface Ticker {
 }
 type Tickers = Ticker[]
 
-interface StockDataRecord {
-  date: string;
+interface HistoricDataRecord {
+  date: Date;
   open: number
   high: number
   low: number
   close: number
   avg: number
 }
-type CompanyStockData = StockDataRecord[]
+type HistoricData = HistoricDataRecord[]
 
 interface Quote {
   price: number
@@ -101,6 +106,7 @@ interface TtmFinancialData extends RawTtmFinancialData {
 interface CombinedInfo extends Quote, TtmFinancialData {
   dividend: Dividend
   priceChange: number
+  priceGap: number
 }
 
 interface CheapStock extends Ticker {
@@ -112,6 +118,11 @@ interface BestDividend extends Ticker {
   dividend: number
 }
 type BestDividends = BestDividend[]
+
+interface BiggestGap extends Ticker {
+  gap: number
+}
+type BiggestGaps = BiggestGap[]
 
 type AdvancedFiltersKey = 'dividend' | 'marketCap' | 'bookValue' | 'priceToEarnings' | 'priceToBook' | 'priceChange'
 

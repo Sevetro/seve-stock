@@ -1,29 +1,29 @@
 import path from 'path';
 import fs from 'fs';
-import { differenceInHours, subYears } from 'date-fns';
+import { differenceInHours, isBefore, subYears } from 'date-fns';
 import { WebContents } from 'electron';
+import { ChartResultArrayQuote } from 'yahoo-finance2/modules/chart';
 
 import { dataCacheDirname } from './constants.js';
-import { StockRecordCache } from './types.js';
-import { convertStringDateToStooqDate, timestampParser } from './utils.js';
-import { fetchingPeriodYears, staleStockDataHours } from './config.js';
+import { HistoricDataCache } from './types.js';
+import { historicCacheParser } from './utils.js';
+import { fetchingPeriodYears, staleHistoricDataHours } from './config.js';
 import { printAndSendError, printAndSendLog, printAndSendMsg } from '../utils/message.js';
 import { errors, getErrorMsg, isError } from '../shared-with-ui/errors.js';
 import { logs } from '../shared-with-ui/logs.js';
-import { convertNativeDateToStooqDate } from '../shared-with-ui/date.js';
+import { YahooFinanceType } from '../main.js';
 
 const historicCachePath = path.join(dataCacheDirname, 'historic');
 
-function createHistoricDataObject(record: string): StockDataRecord {
-  const recordData = record.split(',');
-  const open = parseFloat(recordData[1]);
-  const high = parseFloat(recordData[2]);
-  const low = parseFloat(recordData[3]);
-  const close = parseFloat(recordData[4]);
-  const avg = Number(((open + high + low + close) / 4).toFixed(3));
+function adjustHistoricData({ date, ...quote }: ChartResultArrayQuote): HistoricDataRecord {
+  const open = Number(quote.open?.toFixed(4));
+  const high = Number(quote.high?.toFixed(4));
+  const low = Number(quote.low?.toFixed(4));
+  const close = Number(quote.close?.toFixed(4));
+  const avg = Number(((open + high + low + close) / 4).toFixed(4));
 
   return {
-    date: recordData[0],
+    date,
     open,
     high,
     low,
@@ -32,89 +32,78 @@ function createHistoricDataObject(record: string): StockDataRecord {
   };
 }
 
-async function fetchHistoricData(symbol: string, webContents: WebContents) {
-  const today = convertNativeDateToStooqDate(new Date());
-  const startDate = convertNativeDateToStooqDate(subYears(new Date(), fetchingPeriodYears));
-  const url = `https://stooq.com/q/d/l/?s=${symbol}&d1=${startDate}&d2=${today}&i=d`;
-
+async function fetchHistoricData(
+  symbol: string,
+  yahooFinance: YahooFinanceType,
+  webContents: WebContents
+) {
+  const today = new Date();
+  const startDate = subYears(today, fetchingPeriodYears);
   try {
-    const res = await fetch(url);
-    if (!res.ok) throw new Error(errors.responseNotOk(res.status, symbol));
-
-    const data = await res.text();
-    if (!data || data.trim().length === 0) throw new Error(errors.emptyStockDataResponse(symbol));
-    if (data === 'Exceeded the daily hits limit') throw new Error(errors.exceededDailyHitsLimit(symbol));
-    if (data === 'No data') throw new Error(errors.noAvailableStockData(symbol));
-
-    const records = data.trim().split(/\r?\n/);
-    records.shift();
-    const stockData = records.map(record => createHistoricDataObject(record));
-    const today = new Date();
+    const chartData = await yahooFinance.chart(symbol + '.WA', { period1: startDate });
+    const historicData = chartData.quotes.map(adjustHistoricData);
 
     const stockDataWithTimestamp = {
       timestamp: today,
-      stockData
+      historicData
     };
 
     const filePath = path.join(historicCachePath, `${symbol}.json`);
     fs.mkdirSync(historicCachePath, { recursive: true });
     fs.writeFileSync(filePath, JSON.stringify(stockDataWithTimestamp, null, 2));
 
-    return stockData;
+    return historicData;
   } catch (err) {
     printAndSendError(webContents, fetchHistoricData.name, err);
   }
 }
 
 // Name of the function used in error recognition
-export async function getHistoricData(symbol: string, stooqStartDate: string, webContents: WebContents) {
-  const endDate = convertNativeDateToStooqDate(new Date());
-  let finalStockData: CompanyStockData | undefined;
+export async function getHistoricData(
+  symbol: string,
+  startDate: Date,
+  yahooFinance: YahooFinanceType,
+  webContents: WebContents
+) {
+  let historicData: HistoricData | undefined;
   const filePath = path.join(historicCachePath, `${symbol}.json`);
-
   try {
     const rawData = fs.readFileSync(filePath, 'utf-8');
-    const parsedData: StockRecordCache = JSON.parse(rawData, timestampParser);
-    const { timestamp, stockData } = parsedData;
+    const parsedData: HistoricDataCache = JSON.parse(rawData, historicCacheParser);
+    const { timestamp, historicData: cachedHistoricData } = parsedData;
 
-    if (stockData.length === 0) throw new Error(logs.emptyHistoricDataCache(symbol));
+    if (cachedHistoricData.length === 0) throw new Error(logs.emptyHistoricDataCache(symbol));
 
     const hoursSinceUpdate = differenceInHours(new Date(), timestamp);
+    if (hoursSinceUpdate >= staleHistoricDataHours) {
+      const freshHistoricData = await fetchHistoricData(symbol, yahooFinance, webContents);
 
-    if (hoursSinceUpdate >= staleStockDataHours) {
-      // printAndSendLog(webContents, getHistoricData.name, logs.stockDataStale(symbol));
-      const freshStockData = await fetchHistoricData(symbol, webContents);
-
-      if (freshStockData === undefined || freshStockData.length === 0) {
+      if (freshHistoricData === undefined || freshHistoricData.length === 0) {
         printAndSendMsg(webContents, {
-          msg: errors.freshStockDataUnavailable(symbol),
+          msg: errors.freshHistoricDataUnavailable(symbol),
           source: getHistoricData.name,
           type: 'error',
           details: { symbol }
         });
-        finalStockData = stockData;
-      } else {
-        finalStockData = freshStockData;
-      }
+        historicData = cachedHistoricData;
 
-    } else {
-      finalStockData = stockData;
-    }
+      } else historicData = freshHistoricData;
+
+    } else historicData = cachedHistoricData;
+
   } catch (err) {
     if (isError(err) && 'code' in err && err.code === 'ENOENT') {
       printAndSendLog(webContents, getHistoricData.name, logs.historicCacheNotFound(symbol));
-      finalStockData = await fetchHistoricData(symbol, webContents);
+      historicData = await fetchHistoricData(symbol, yahooFinance, webContents);
     }
     else if (getErrorMsg(err) === logs.emptyHistoricDataCache(symbol)) {
       printAndSendLog(webContents, getHistoricData.name, logs.emptyHistoricDataCache(symbol));
-      finalStockData = await fetchHistoricData(symbol, webContents);
+      historicData = await fetchHistoricData(symbol, yahooFinance, webContents);
     }
     else {
       printAndSendError(webContents, getHistoricData.name, err);
     }
   }
 
-  return finalStockData?.filter((stockRecord) =>
-    convertStringDateToStooqDate(stockRecord.date) >= stooqStartDate &&
-    convertStringDateToStooqDate(stockRecord.date) <= endDate);
+  return historicData?.filter(({ date }) => !isBefore(date, startDate));
 }

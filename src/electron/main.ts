@@ -5,7 +5,9 @@ import { ipcMainHandle, isDev } from './utils/core.js';
 import { getPreloadPath, getUIPath } from './utils/path-resolver.js';
 import { getTickers } from './stock-data/tickers.js';
 import { getHistoricData } from './stock-data/historic-data.js';
-import { getAdvancedFiltersResult, getBestDividends, getCheapStocks, getCombinedInfo } from './stock-data/formulas.js';
+import {
+  getAdvancedFiltersResult, getBestDividends, getBiggestGaps, getCheapStocks, getCombinedInfo
+} from './stock-data/formulas.js';
 
 const yahooFinance = new YahooFinance({ suppressNotices: ['yahooSurvey'] });
 export type YahooFinanceType = typeof yahooFinance;
@@ -31,16 +33,18 @@ app.whenReady().then(async () => {
   const { webContents } = mainWindow;
   ipcMainHandle('getTickers', () =>
     getTickers(webContents, yahooFinance));
-  ipcMainHandle('getCompanyStockData', (symbol, stooqStartDate) =>
-    getHistoricData(symbol, stooqStartDate, webContents));
-  ipcMainHandle('getCombinedInfo', (symbol, stooqStartDate) =>
-    getCombinedInfo(symbol, stooqStartDate, yahooFinance, webContents));
-  ipcMainHandle('getCheapStocks', (stooqStartDate: string, count: number) =>
-    getCheapStocks(stooqStartDate, count, webContents, yahooFinance));
+  ipcMainHandle('getHistoricData', (symbol, startDate) =>
+    getHistoricData(symbol, startDate, yahooFinance, webContents));
+  ipcMainHandle('getCombinedInfo', (symbol, startDate) =>
+    getCombinedInfo(symbol, startDate, yahooFinance, webContents));
+  ipcMainHandle('getCheapStocks', (startDate, count) =>
+    getCheapStocks(startDate, count, yahooFinance, webContents));
   ipcMainHandle('getBestDividends', (count) =>
-    getBestDividends(count, webContents, yahooFinance));
-  ipcMainHandle('getAdvancedFiltersResult', (advancedFilters, stooqStartDate) =>
-    getAdvancedFiltersResult(advancedFilters, stooqStartDate, yahooFinance, webContents));
+    getBestDividends(count, yahooFinance, webContents));
+  ipcMainHandle('getBiggestGaps', (startDate, count) =>
+    getBiggestGaps(startDate, count, yahooFinance, webContents));
+  ipcMainHandle('getAdvancedFiltersResult', (advancedFilters, startDate) =>
+    getAdvancedFiltersResult(advancedFilters, startDate, yahooFinance, webContents));
 
   mainWindow.on('closed', () => {
     app.quit();

@@ -10,42 +10,107 @@ import { getQuote } from './quotes.js';
 import { getTtmFinancialData } from './financials.js';
 import { getDividend } from './dividend.js';
 
-async function getAvgPrice(symbol: string, stooqStartDate: string, webContents: WebContents) {
+async function getAvgPrice(
+  symbol: string,
+  startDate: Date,
+  yahooFinance: YahooFinanceType,
+  webContents: WebContents
+) {
   try {
-    const companyStockData = await getHistoricData(symbol, stooqStartDate, webContents);
+    const historicData = await getHistoricData(symbol, startDate, yahooFinance, webContents);
 
-    if (companyStockData === undefined || companyStockData.length === 0)
+    if (historicData === undefined || historicData.length === 0)
       throw new Error(errors.cantGetHistoricData(symbol));
 
-    return Number((companyStockData.reduce((acc, { avg }) => acc + avg, 0) / companyStockData.length).toFixed(2));
+    return Number((historicData.reduce((acc, { avg }) => acc + avg, 0) / historicData.length).toFixed(2));
   } catch (err) {
     printAndSendError(webContents, getAvgPrice.name, err);
   }
 }
 
-export async function getCombinedInfo(
+async function getHighestPrice(
   symbol: string,
-  stooqStartDate: string,
+  startDate: Date,
   yahooFinance: YahooFinanceType,
   webContents: WebContents
 ) {
   try {
+    const historicData = await getHistoricData(symbol, startDate, yahooFinance, webContents);
+
+    if (historicData === undefined || historicData.length === 0)
+      throw new Error(errors.cantGetHistoricData(symbol));
+
+    return historicData.sort((a, b) => a.high - b.high)[historicData.length - 1].high;
+  } catch (err) {
+    printAndSendError(webContents, getAvgPrice.name, err);
+  }
+}
+
+export async function getBiggestGaps(
+  startDate: Date,
+  count: number,
+  yahooFinance: YahooFinanceType,
+  webContents: WebContents
+) {
+  try {
+    const tickers = await getTickers(webContents, yahooFinance);
+    if (tickers === undefined || tickers.length === 0) throw new Error(errors.cantGetTickers);
+
+    const prices = await Promise.all(
+      tickers.map(
+        async ({ symbol, name }) => {
+          const currPrice = (await getQuote(symbol, yahooFinance, webContents))?.price;
+          const highestPrice = await getHighestPrice(symbol, startDate, yahooFinance, webContents);
+
+          if (currPrice === undefined || highestPrice === undefined)
+            throw new Error('Invalid symbol data TODO');
+
+          return {
+            symbol,
+            name,
+            gap: Number((currPrice / highestPrice * 100).toFixed(0))
+          };
+        }
+      )
+    );
+
+    return prices
+      .sort((a, b) => a.gap - b.gap)
+      .slice(0, count);
+  } catch (err) {
+    printAndSendError(webContents, getBiggestGaps.name, err);
+  }
+
+}
+
+export async function getCombinedInfo(
+  symbol: string,
+  startDate: Date,
+  yahooFinance: YahooFinanceType,
+  webContents: WebContents
+) {
+
+  try {
     const quote = await getQuote(symbol, yahooFinance, webContents);
     const ttmFinancialData = await getTtmFinancialData(symbol, yahooFinance, webContents);
-    const avgPrice = await getAvgPrice(symbol, stooqStartDate, webContents);
+    const avgPrice = await getAvgPrice(symbol, startDate, yahooFinance, webContents);
+    const highestPrice = await getHighestPrice(symbol, startDate, yahooFinance, webContents);
 
     if (quote === undefined ||
       ttmFinancialData === undefined ||
-      avgPrice === undefined) throw new Error(errors.cantGetCombinedInfo(symbol));
+      avgPrice === undefined ||
+      highestPrice === undefined) throw new Error(errors.cantGetCombinedInfo(symbol));
 
     const dividend = await getDividend(symbol, yahooFinance, webContents);
     const priceChange = quote.price / avgPrice * 100;
+    const priceGap = Number((quote.price / highestPrice * 100).toFixed(0));
 
     const combinedInfo: CombinedInfo = {
       ...quote,
       ...ttmFinancialData,
       dividend,
-      priceChange
+      priceChange,
+      priceGap
     };
 
     return combinedInfo;
@@ -56,7 +121,10 @@ export async function getCombinedInfo(
 
 // Before changing the name, check out usage in messages source
 export async function getCheapStocks(
-  stooqStartDate: string, count: number, webContents: WebContents, yahooFinance: YahooFinanceType
+  startDate: Date,
+  count: number,
+  yahooFinance: YahooFinanceType,
+  webContents: WebContents
 ) {
   try {
     const tickers = await getTickers(webContents, yahooFinance);
@@ -79,7 +147,7 @@ export async function getCheapStocks(
     const avgPrices: Record<string, number> = {};
     const validAvgSymbols: string[] = [];
     for (const symbol of validPricesSymbols) {
-      const avgPrice = await getAvgPrice(symbol, stooqStartDate, webContents);
+      const avgPrice = await getAvgPrice(symbol, startDate, yahooFinance, webContents);
       if (avgPrice === undefined) {
         printAndSendMsg(webContents, { msg: errors.cantGetAvgPrice(symbol), source: getCheapStocks.name, type: 'error', details: { symbol } });
       } else {
@@ -102,7 +170,11 @@ export async function getCheapStocks(
   }
 }
 
-export async function getBestDividends(count: number, webContents: WebContents, yahooFinance: YahooFinanceType) {
+export async function getBestDividends(
+  count: number,
+  yahooFinance: YahooFinanceType,
+  webContents: WebContents
+) {
   try {
     const tickers = await getTickers(webContents, yahooFinance);
     if (tickers === undefined || tickers.length === 0) throw new Error(errors.cantGetTickers);
@@ -131,7 +203,7 @@ export async function getBestDividends(count: number, webContents: WebContents, 
 
 export async function getAdvancedFiltersResult(
   advancedFilters: Partial<AdvancedFilters>,
-  stooqStartDate: string,
+  startDate: Date,
   yahooFinance: YahooFinanceType,
   webContents: WebContents
 ) {
@@ -141,7 +213,7 @@ export async function getAdvancedFiltersResult(
 
     const allStocksInfo = await Promise.all(
       tickers.map(async ({ symbol, name }) => {
-        const combinedInfo = await getCombinedInfo(symbol, stooqStartDate, yahooFinance, webContents);
+        const combinedInfo = await getCombinedInfo(symbol, startDate, yahooFinance, webContents);
         return {
           symbol,
           name,
@@ -157,7 +229,6 @@ export async function getAdvancedFiltersResult(
           return inMinMaxRange(value, min, max);
         }))
       .map((company) => ({ symbol: company!.symbol, name: company!.name }));
-
   } catch (err) {
     printAndSendError(webContents, getAdvancedFiltersResult.name, err);
   }

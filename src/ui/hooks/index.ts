@@ -1,3 +1,3 @@
 export { useTickers } from './use-tickers';
-export { useCompanyStockData } from './use-company-stock-data';
+export { useHistoricData } from './use-historic-data';
 export { useCombinedInfo } from './use-combined-info';
