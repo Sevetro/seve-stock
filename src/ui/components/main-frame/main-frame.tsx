@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { subDays } from 'date-fns';
 
 import { Combobox, Select } from '../../design-system';
@@ -27,7 +27,10 @@ export const MainFrame = ({
   const allTickers = useTickers();
   const [symbol, setSymbol] = useState('');
   const [period, setPeriod] = useState('30');
-  const startDate = subDays(new Date(), Number(period));
+  const [startDate, setStartDate] = useState(subDays(new Date(), Number(period)));
+  useEffect(() => {
+    setStartDate(subDays(new Date(), Number(period)));
+  }, [period]);
   const historicData = useHistoricData(symbol, startDate);
 
   const [activeFiltersTab, setActiveFiltersTab] = useState<FilterTab>('basic');
