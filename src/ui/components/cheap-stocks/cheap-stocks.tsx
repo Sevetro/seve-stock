@@ -48,7 +48,7 @@ export const CheapStocks = ({
 
         const cheapStocksWithValue = cheapStocks.map(({ discount, name, symbol }) => (
           {
-            name: `${name} - ${(discount * 100).toFixed(0)}%`,
+            name: `${name} - ${discount}%`,
             symbol,
             discount
           }

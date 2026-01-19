@@ -17,3 +17,7 @@ export function inMinMaxRange(value: number | undefined, min?: number, max?: num
     (min === undefined || value >= min) &&
     (max === undefined || value <= max);
 }
+
+export function numberToFixed(number: number, precision: number) {
+  return Number(number.toFixed(precision));
+}

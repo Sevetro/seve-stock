@@ -15,13 +15,18 @@ interface InfoCardProps {
 export const InfoCard = ({ symbol, startDate }: InfoCardProps) => {
   const combinedInfo = useCombinedInfo(symbol, startDate);
 
+  const dividend = combinedInfo?.dividend === undefined ||
+    combinedInfo.dividend === 0
+    ? '-'
+    : combinedInfo.dividend + '%';
+
   return (
     <div className={infoCard}>
       <div>Symbol: {symbol}</div>
       <div>Current price: {combinedInfo?.price}</div>
-      <div>Price change: {combinedInfo?.priceChange.toFixed(0)}%</div>
+      <div>Price change: {combinedInfo?.priceChange}%</div>
       <div>Price gap: {combinedInfo?.priceGap}%</div>
-      <div>Dividend: {combinedInfo?.dividend && `${combinedInfo?.dividend}%`}</div>
+      <div>Dividend: {dividend}</div>
       <div>Market cap: {formatter.format(combinedInfo?.marketCap ?? 0)}</div>
       <div>Book value: {formatter.format(combinedInfo?.bookValue ?? 0)}</div>
       <div>Price to book: {combinedInfo?.priceToBook.toFixed(2)}</div>

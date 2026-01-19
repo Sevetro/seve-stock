@@ -8,7 +8,7 @@ import { dataCacheDirname } from './constants.js';
 import { TickersCache } from './types.js';
 import { timestampParser } from './utils.js';
 import { staleTickersDays } from './config.js';
-import { errors, getErrorMsg, isError } from '../shared-with-ui/errors.js';
+import { errors, isError } from '../shared-with-ui/errors.js';
 import { printAndSendError, printAndSendLog, printAndSendMsg } from '../utils/message.js';
 import { logs } from '../shared-with-ui/logs.js';
 import { YahooFinanceType } from '../main.js';
@@ -68,36 +68,29 @@ async function fetchTickers(webContents: WebContents, yahooFinance: YahooFinance
   }
 }
 
+// either gets 140 tickers or undefined, no empty arrays
 export async function getTickers(webContents: WebContents, yahooFinance: YahooFinanceType) {
   try {
     const rawData = fs.readFileSync(tickersCachePath, 'utf-8');
     const parsedData: TickersCache = JSON.parse(rawData, timestampParser);
     const { timestamp, tickers } = parsedData;
 
-    if (tickers.length === 0) throw new Error(errors.tickersCacheEmpty);
-
     const daysSinceUpdate = differenceInDays(new Date(), timestamp);
 
     if (daysSinceUpdate >= staleTickersDays) {
-      printAndSendLog(webContents, getTickers.name, logs.tickersStale);
       const freshTickers = await fetchTickers(webContents, yahooFinance);
 
-      if (freshTickers === undefined || freshTickers.length === 0) {
+      if (freshTickers === undefined) {
         printAndSendMsg(webContents, { msg: errors.usingStaleTickers, source: getTickers.name, type: 'error' });
         return tickers;
-      } else {
-        return freshTickers;
-      }
 
-    } else {
-      return tickers;
-    }
+      } else return freshTickers;
+
+    } else return tickers;
+
   } catch (err) {
     if (isError(err) && 'code' in err && err.code === 'ENOENT') {
       printAndSendLog(webContents, getTickers.name, logs.tickersCacheMissing);
-      return await fetchTickers(webContents, yahooFinance);
-    } else if (getErrorMsg(err) === errors.tickersCacheEmpty) {
-      printAndSendError(webContents, getTickers.name, err);
       return await fetchTickers(webContents, yahooFinance);
     } else {
       printAndSendError(webContents, getTickers.name, err);

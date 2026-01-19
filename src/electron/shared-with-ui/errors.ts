@@ -1,8 +1,8 @@
 export const errors = {
   unknownError: 'Unknown error occured.',
   cantGetWig140: 'The list of WIG140 tickers is invalid',
-  tickersCacheEmpty: 'Tickers cache file is empty, trying to scrap...',
   usingStaleTickers: 'Unable to scrap fresh tickers, using stale data from cache.',
+  noHistoricData: (symbol: string) => `No available historic data for ${symbol}`,
   freshHistoricDataUnavailable: (symbol: string) => `Fresh stock data for ${symbol} unavailable, using stale data from cache.`,
   cantGetHistoricData: (symbol: string) => `Can't get ${symbol} historic data.`,
   noAvailableTickers: 'No available tickers',

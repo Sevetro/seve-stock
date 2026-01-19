@@ -71,8 +71,6 @@ export async function getQuote(symbol: string, yahooFinance: YahooFinanceType, w
 
     const minutesSinceUpdate = differenceInMinutes(new Date(), timestamp);
     if (minutesSinceUpdate >= staleQuoteMinutes) {
-      // printAndSendLog(webContents, getQuote.name, logs.staleQuote(symbol));
-
       const freshQuote = await fetchQuote(symbol, yahooFinance, webContents);
       if (freshQuote === undefined) {
         printAndSendMsg(webContents, {

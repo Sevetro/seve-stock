@@ -1,15 +1,15 @@
 import path from 'path';
 import fs from 'fs';
-import { differenceInHours, isBefore, subYears } from 'date-fns';
+import { differenceInMinutes, isBefore, subYears } from 'date-fns';
 import { WebContents } from 'electron';
 import { ChartResultArrayQuote } from 'yahoo-finance2/modules/chart';
 
 import { dataCacheDirname } from './constants.js';
 import { HistoricDataCache } from './types.js';
 import { historicCacheParser } from './utils.js';
-import { fetchingPeriodYears, staleHistoricDataHours } from './config.js';
+import { fetchingPeriodYears, staleHistoricDataMinutes } from './config.js';
 import { printAndSendError, printAndSendLog, printAndSendMsg } from '../utils/message.js';
-import { errors, getErrorMsg, isError } from '../shared-with-ui/errors.js';
+import { errors, isError } from '../shared-with-ui/errors.js';
 import { logs } from '../shared-with-ui/logs.js';
 import { YahooFinanceType } from '../main.js';
 
@@ -43,6 +43,8 @@ async function fetchHistoricData(
     const chartData = await yahooFinance.chart(symbol + '.WA', { period1: startDate });
     const historicData = chartData.quotes.map(adjustHistoricData);
 
+    if (historicData.length === 0) throw new Error(errors.noHistoricData(symbol));
+
     const stockDataWithTimestamp = {
       timestamp: today,
       historicData
@@ -72,10 +74,8 @@ export async function getHistoricData(
     const parsedData: HistoricDataCache = JSON.parse(rawData, historicCacheParser);
     const { timestamp, historicData: cachedHistoricData } = parsedData;
 
-    if (cachedHistoricData.length === 0) throw new Error(logs.emptyHistoricDataCache(symbol));
-
-    const hoursSinceUpdate = differenceInHours(new Date(), timestamp);
-    if (hoursSinceUpdate >= staleHistoricDataHours) {
+    const minutesSinceUpdate = differenceInMinutes(new Date(), timestamp);
+    if (minutesSinceUpdate >= staleHistoricDataMinutes) {
       const freshHistoricData = await fetchHistoricData(symbol, yahooFinance, webContents);
 
       if (freshHistoricData === undefined || freshHistoricData.length === 0) {
@@ -95,12 +95,7 @@ export async function getHistoricData(
     if (isError(err) && 'code' in err && err.code === 'ENOENT') {
       printAndSendLog(webContents, getHistoricData.name, logs.historicCacheNotFound(symbol));
       historicData = await fetchHistoricData(symbol, yahooFinance, webContents);
-    }
-    else if (getErrorMsg(err) === logs.emptyHistoricDataCache(symbol)) {
-      printAndSendLog(webContents, getHistoricData.name, logs.emptyHistoricDataCache(symbol));
-      historicData = await fetchHistoricData(symbol, yahooFinance, webContents);
-    }
-    else {
+    } else {
       printAndSendError(webContents, getHistoricData.name, err);
     }
   }
