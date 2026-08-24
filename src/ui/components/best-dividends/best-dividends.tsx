@@ -17,7 +17,7 @@ interface BestDividendsProps {
 }
 
 export const BestDividends = ({ enabled, setEnabled, setBestDividends, setSymbol, areBestDividendsStale }: BestDividendsProps) => {
-  const [bestDividendsCountArr, setBestDividendsCountArr] = useState([0]);
+  const [bestDividendsCountArr, setBestDividendsCountArr] = useState([10]);
   const bestDividendsCount = bestDividendsCountArr[0];
   const [bestDividendsLoading, setBestDividendsLoading] = useState(false);
 

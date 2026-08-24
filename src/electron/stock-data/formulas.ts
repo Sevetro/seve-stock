@@ -8,7 +8,7 @@ import { getTickers } from './tickers.js';
 import { YahooFinanceType } from '../main.js';
 import { getQuote } from './quotes.js';
 import { getTtmFinancialData } from './financials.js';
-import { getDividend } from './dividend.js';
+import { getPrevYearDividend } from './prev-year-dividend.js';
 
 async function getAvgPrice(
   symbol: string,
@@ -40,10 +40,11 @@ async function getHighestPrice(
 
     return historicData.sort((a, b) => a.high - b.high)[historicData.length - 1].high;
   } catch (err) {
-    printAndSendError(webContents, getAvgPrice.name, err);
+    printAndSendError(webContents, getHighestPrice.name, err);
   }
 }
 
+// Name of the function used in error recognition
 export async function getBiggestGaps(
   startDate: Date,
   count: number,
@@ -60,8 +61,15 @@ export async function getBiggestGaps(
           const currPrice = (await getQuote(symbol, yahooFinance, webContents))?.price;
           const highestPrice = await getHighestPrice(symbol, startDate, yahooFinance, webContents);
 
-          if (currPrice === undefined || highestPrice === undefined)
-            throw new Error('Invalid symbol data TODO');
+          if (currPrice === undefined || highestPrice === undefined) {
+            printAndSendMsg(webContents, {
+              msg: errors.invalidData(symbol),
+              source: getBiggestGaps.name,
+              type: 'error',
+              details: { symbol }
+            });
+            return;
+          }
 
           return {
             symbol,
@@ -73,6 +81,7 @@ export async function getBiggestGaps(
     );
 
     return prices
+      .filter(price => price !== undefined)
       .sort((a, b) => a.gap - b.gap)
       .slice(0, count);
   } catch (err) {
@@ -99,7 +108,12 @@ export async function getCombinedInfo(
       avgPrice === undefined ||
       highestPrice === undefined) throw new Error(errors.cantGetCombinedInfo(symbol));
 
-    const dividend = await getDividend(symbol, yahooFinance, webContents);
+    let dividend = 0;
+    const prevYearDividend = (await getPrevYearDividend(symbol, yahooFinance, webContents))?.prevYearDividendToAvgPrice ?? 0;
+
+    if (quote.dividend !== 0 && prevYearDividend !== 0) dividend = (quote.dividend + prevYearDividend) / 2;
+    else dividend = quote.dividend || prevYearDividend;
+
     const priceChange = numberToFixed(quote.price / avgPrice * 100, 0);
     const priceGap = numberToFixed(quote.price / highestPrice * 100, 0);
 
@@ -180,14 +194,20 @@ export async function getBestDividends(
 
     const bestDividends = await Promise.all(
       tickers.map(async ({ symbol, name }) => {
-        const dividend = await getDividend(symbol, yahooFinance, webContents);
-        if (dividend != null) {
-          return {
-            symbol,
-            name,
-            dividend
-          };
-        }
+        const prevYearDividend = (await getPrevYearDividend(symbol, yahooFinance, webContents))?.prevYearDividendToAvgPrice ?? 0;
+        const trustMeBroDividend = (await getQuote(symbol, yahooFinance, webContents))?.dividend ?? 0;
+
+        let dividend = 0;
+        if (prevYearDividend !== 0 && trustMeBroDividend !== 0) dividend = (prevYearDividend + trustMeBroDividend) / 2;
+        else dividend = trustMeBroDividend || prevYearDividend;
+
+        if (dividend === 0) return;
+
+        return {
+          symbol,
+          name,
+          dividend
+        };
       })
     );
 

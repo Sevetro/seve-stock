@@ -1,7 +1,7 @@
 import fs from 'fs';
 import path from 'path';
 import { WebContents } from 'electron';
-import { FundamentalsTimeSeriesFinancialsResult } from 'yahoo-finance2/modules/fundamentalsTimeSeries';
+import { FundamentalsTimeSeriesFinancialsResult, FundamentalsTimeSeriesResult } from 'yahoo-finance2/modules/fundamentalsTimeSeries';
 import { differenceInHours } from 'date-fns';
 
 import { YahooFinanceType } from '../main.js';
@@ -28,15 +28,20 @@ async function fetchTtmFinancialData(
       type: 'trailing'
     }, {
       validateResult: false
-    })).filter(
-      (item: any): item is FundamentalsTimeSeriesFinancialsResult => item.TYPE === 'FINANCIALS'
+    }) as FundamentalsTimeSeriesResult[]).filter(
+      (item): item is FundamentalsTimeSeriesFinancialsResult => item.TYPE === 'FINANCIALS'
     );
 
     if (ttmFinancialResults?.[0] === undefined) throw new Error(errors.cantFetchTtmFinancialData(yahooSymbol));
 
     const {
       totalRevenue, grossProfit, operatingIncome, EBITDA, EBIT, netIncome
-    }: RawTtmFinancialData = ttmFinancialResults[0];
+    } = ttmFinancialResults[0];
+
+    // Yahoo occasionally omits some trailing financial fields; bail out rather than caching undefined/NaN
+    if (totalRevenue === undefined || grossProfit === undefined || operatingIncome === undefined ||
+      EBITDA === undefined || EBIT === undefined || netIncome === undefined
+    ) throw new Error(errors.cantFetchTtmFinancialData(yahooSymbol));
 
     const ttmFinancialData: TtmFinancialData = {
       totalRevenue,
@@ -52,7 +57,7 @@ async function fetchTtmFinancialData(
     };
 
     const today = new Date();
-    const financialDataWithTimestamp = {
+    const financialDataWithTimestamp: TtmFinancialDataCache = {
       timestamp: today,
       ...ttmFinancialData
     };

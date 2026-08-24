@@ -83,9 +83,14 @@ interface Quote {
   marketCap: number
   bookValue: number
   priceToEarnings: number
+  dividend: number
 }
 
-type Dividend = number | undefined
+interface PrevYearDividendData {
+  prevYearDividendValue: number
+  prevYearDividendToCurrPrice: number
+  prevYearDividendToAvgPrice: number
+}
 
 interface RawTtmFinancialData {
   totalRevenue: number

@@ -18,36 +18,46 @@ const stockQuotesCachePath = path.join(dataCacheDirname, 'stock-quotes');
 async function fetchQuote(symbol: string, yahooFinance: YahooFinanceType, webContents: WebContents) {
   try {
     const quoteAllInfo = await yahooFinance.quote(`${symbol}.WA`, {
-      fields: ['regularMarketPrice', 'priceToBook', 'marketCap', 'trailingPE', 'epsTrailingTwelveMonths']
+      fields: ['regularMarketPrice', 'priceToBook', 'marketCap', 'trailingPE', 'epsTrailingTwelveMonths',
+        'dividendYield', 'trailingAnnualDividendYield'
+      ]
     }) as QuoteEquity | undefined;
 
     if (quoteAllInfo === undefined) throw new Error(errors.cantFetchQuote(symbol));
 
     const {
-      regularMarketPrice, priceToBook, marketCap, sharesOutstanding, trailingPE, epsTrailingTwelveMonths
+      regularMarketPrice, priceToBook, marketCap, trailingPE, epsTrailingTwelveMonths,
+      dividendYield, trailingAnnualDividendYield
     } = quoteAllInfo;
 
-    if (
-      regularMarketPrice === undefined ||
-      marketCap === undefined ||
-      priceToBook === undefined ||
-      sharesOutstanding === undefined ||
-      epsTrailingTwelveMonths === undefined
-    ) throw new Error(errors.invalidQuote(symbol));
+    if (regularMarketPrice === undefined || !priceToBook) throw new Error(errors.invalidQuote(symbol));
 
-    const bookValue = marketCap / priceToBook;
-    const priceToEarnings = trailingPE === undefined
-      ? regularMarketPrice / epsTrailingTwelveMonths
-      : trailingPE;
+    const bookValue = marketCap == null ? 0 : marketCap / priceToBook;
+
+    let priceToEarnings = 0;
+    if (trailingPE != null) priceToEarnings = trailingPE;
+    if (trailingPE == null && epsTrailingTwelveMonths) priceToEarnings = regularMarketPrice / epsTrailingTwelveMonths;
+
+    function calcDividend() {
+      if (dividendYield != null && dividendYield !== 0 &&
+        trailingAnnualDividendYield != null && trailingAnnualDividendYield !== 0
+      ) return (dividendYield + trailingAnnualDividendYield * 100) / 2;
+
+      if (dividendYield != null && dividendYield !== 0) return dividendYield;
+      if (trailingAnnualDividendYield != null && trailingAnnualDividendYield !== 0) return trailingAnnualDividendYield * 100;
+      return 0;
+    }
+    const dividend = calcDividend();
 
     const quote: Quote = {
       price: regularMarketPrice,
-      marketCap,
+      marketCap: marketCap ?? 0,
       bookValue,
       priceToBook,
-      priceToEarnings
+      priceToEarnings,
+      dividend
     };
-    const quoteWithTimestamp = {
+    const quoteWithTimestamp: StockQuoteCache = {
       timestamp: new Date(),
       ...quote
     };

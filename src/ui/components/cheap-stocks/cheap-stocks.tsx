@@ -14,7 +14,7 @@ interface CheapStocksProps {
   startDate: Date
   setCheapStocks: (cheapStocks: CheapStocks) => void
   setSymbol: (symbol: string) => void
-  hasCheapStocksWarning: boolean
+  hasWarning: boolean
 }
 
 export const CheapStocks = ({
@@ -23,9 +23,9 @@ export const CheapStocks = ({
   startDate,
   setCheapStocks,
   setSymbol,
-  hasCheapStocksWarning
+  hasWarning
 }: CheapStocksProps) => {
-  const [cheapStocksCountArr, setCheapStocksCountArr] = useState([0]);
+  const [cheapStocksCountArr, setCheapStocksCountArr] = useState([10]);
   const cheapStocksCount = cheapStocksCountArr[0];
   const [cheapStocksLoading, setCheapStocksLoading] = useState(false);
 
@@ -72,7 +72,7 @@ export const CheapStocks = ({
     <fieldset className={cheapStockController}>
       <legend className={cheapStockControllerLegend}>
         {findCheapStockLabel}
-        {enabled && hasCheapStocksWarning && (
+        {enabled && hasWarning && (
           <div className={cheapStocksWarningIcon} data-tooltip="Cheap stocks list might be stale or incomplete">
             <WarningIcon size={20} className={trianglePulse} />
           </div>

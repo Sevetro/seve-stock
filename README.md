@@ -1,7 +1,5 @@
-# React + TypeScript + Vite + Electron
 
-This template provides a minimal setup to get working with Electron, React in Vite with HMR and some ESLint rules.
-
+fundamentalsTimeSeries possible values: financials / balance-sheet / cash-flow / all
 ## Expanding the ESLint configuration
 
 If you are developing a production application, we recommend updating the configuration to enable type-aware lint rules:

@@ -11,6 +11,6 @@
     ]
   },
   "hooks": {
-    "before:github:release": "npm run dist:win"
+    "before:release": "npm run dist:win"
   }
 }

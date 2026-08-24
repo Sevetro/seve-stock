@@ -15,11 +15,15 @@ import { YahooFinanceType } from '../main.js';
 
 const historicCachePath = path.join(dataCacheDirname, 'historic');
 
-function adjustHistoricData({ date, ...quote }: ChartResultArrayQuote): HistoricDataRecord {
+function adjustHistoricData({ date, ...quote }: ChartResultArrayQuote): HistoricDataRecord | null {
   const open = Number(quote.open?.toFixed(4));
   const high = Number(quote.high?.toFixed(4));
   const low = Number(quote.low?.toFixed(4));
   const close = Number(quote.close?.toFixed(4));
+
+  // Yahoo occasionally returns quotes with missing/null OHLC fields; skip those rather than caching NaN
+  if (![open, high, low, close].every(Number.isFinite)) return null;
+
   const avg = Number(((open + high + low + close) / 4).toFixed(4));
 
   return {
@@ -41,7 +45,13 @@ async function fetchHistoricData(
   const startDate = subYears(today, fetchingPeriodYears);
   try {
     const chartData = await yahooFinance.chart(symbol + '.WA', { period1: startDate });
-    const historicData = chartData.quotes.map(adjustHistoricData);
+    const adjustedQuotes = chartData.quotes.map(adjustHistoricData);
+    const historicData = adjustedQuotes.filter((record): record is HistoricDataRecord => record !== null);
+
+    const skippedCount = adjustedQuotes.length - historicData.length;
+    if (skippedCount > 0) {
+      printAndSendLog(webContents, fetchHistoricData.name, logs.skippedInvalidHistoricRecords(symbol, skippedCount));
+    }
 
     if (historicData.length === 0) throw new Error(errors.noHistoricData(symbol));
 

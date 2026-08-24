@@ -29,3 +29,9 @@ export function isStaleBestDividendsError({ msg, details }: Message) {
   return details?.symbol !== undefined &&
     msg === errors.freshQuoteUnavailable(details.symbol);
 }
+
+export function isInvalidBiggestGapsError({ msg, source, details }: Message) {
+  return source === 'getBiggestGaps' &&
+    details?.symbol !== undefined &&
+    msg === errors.invalidData(details.symbol);
+}
