@@ -28,6 +28,7 @@ Electron desktop app for analyzing stocks on the Warsaw Stock Exchange (GPW). Da
 - After editing any file, check it for compile/lint errors (e.g. via the editor's diagnostics or `npm run lint`) and fix them before considering the change done — don't hand back a file with new errors introduced by your edit.
 
 ## Conventions
+- When behavior of a third-party library (`yahoo-finance2`, `release-it`, `electron-builder`, etc.) is unclear, verify against its official docs/type definitions before proposing a fix — don't guess.
 - Main process and renderer have separate `tsconfig` projects (`src/electron/tsconfig.json` vs `tsconfig.app.json`) — don't cross-import Node-only code (e.g. `fs`, `path`) into `src/ui/`.
 - IPC channels are added via `ipcMainHandle` in [main.ts](src/electron/main.ts) and must have a matching typed entry in `preload.cts`.
 - `data-cache/` is read/written by main-process modules only; never fetched or written from the renderer directly.

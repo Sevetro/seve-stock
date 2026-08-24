@@ -1,5 +1,5 @@
 #!/usr/bin/env node
-import { execSync } from 'child_process';
+import { execFileSync } from 'child_process';
 
 const releaseName = process.argv.slice(2).join(' ');
 
@@ -9,10 +9,9 @@ if (releaseName === '') {
 }
 
 
-const releaseCmd = `npx release-it --github.releaseName="${releaseName}" --only-version`;
-console.log(`🚀 Running: ${releaseCmd}`);
+console.log(`🚀 Running: npx release-it --github.releaseName="${releaseName}" --only-version`);
 try {
-  execSync(releaseCmd, { stdio: 'inherit' });
+  execFileSync('npx', ['release-it', `--github.releaseName=${releaseName}`, '--only-version'], { stdio: 'inherit' });
 } catch (err) {
   console.error('❌ Error while creating release on GitHub');
   process.exit(1);
