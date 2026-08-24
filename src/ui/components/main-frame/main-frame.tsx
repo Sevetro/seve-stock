@@ -19,10 +19,11 @@ type StockModule = 'cheapStocks' | 'bestDividends' | 'biggestGaps' | 'advancedFi
 interface MainFrameProps {
   hasCheapStocksWarning: boolean
   areBestDividendsStale: boolean
+  hasBiggestGapsWarning: boolean;
 }
 
 export const MainFrame = ({
-  hasCheapStocksWarning, areBestDividendsStale
+  hasCheapStocksWarning, areBestDividendsStale, hasBiggestGapsWarning
 }: MainFrameProps) => {
   const allTickers = useTickers();
   const [symbol, setSymbol] = useState('');
@@ -141,6 +142,7 @@ export const MainFrame = ({
             biggestGapsEnabled={enabledModule === 'biggestGaps'}
             toggleBiggestGaps={toggleBiggestGaps}
             setBiggestGaps={setBiggestGaps}
+            hasBiggestGapsWarning={hasBiggestGapsWarning}
           /> :
           <AdvancedFilters
             advancedFiltersEnabled={enabledModule === 'advancedFilters'}

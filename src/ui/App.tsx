@@ -4,13 +4,14 @@ import { Toast as RadixToast } from 'radix-ui';
 import './App.css';
 import { MainFrame } from './components/main-frame';
 import { serializeMsg } from '../electron/shared-with-ui/message';
-import { isInvalidCheapStocksError, isStaleBestDividendsError, isStaleStockDataUsageMessage } from './utils/messages';
+import { isInvalidBiggestGapsError, isInvalidCheapStocksError, isStaleBestDividendsError, isStaleStockDataUsageMessage } from './utils/messages';
 import { Toast } from './design-system';
 
 export default function App() {
   const [isUsingStaleHistoricData, setIsUsingStaleHistoricData] = useState(false);
   const [areCheapStocksInvalid, setAreCheapStocksInvalid] = useState(false);
   const [areBestDividendsStale, setAreBestDividendsStale] = useState(false);
+  const [areBiggestGapsInvalid, setAreBiggestGapsInvalid] = useState(false);
 
   useEffect(() => {
     const unsub = window.electron.subscribeToMessages(message => {
@@ -18,15 +19,17 @@ export default function App() {
       if (isStaleStockDataUsageMessage(message) && !isUsingStaleHistoricData) setIsUsingStaleHistoricData(true);
       if (isInvalidCheapStocksError(message) && !areCheapStocksInvalid) setAreCheapStocksInvalid(true);
       if (isStaleBestDividendsError(message) && !areBestDividendsStale) setAreBestDividendsStale(true);
+      if (isInvalidBiggestGapsError(message) && !areBiggestGapsInvalid) setAreBiggestGapsInvalid(true);
     });
     return unsub;
-  }, [areBestDividendsStale, areCheapStocksInvalid, isUsingStaleHistoricData]);
+  }, [areBestDividendsStale, areBiggestGapsInvalid, areCheapStocksInvalid, isUsingStaleHistoricData]);
 
   return (
     <RadixToast.Provider>
       <MainFrame
         hasCheapStocksWarning={areCheapStocksInvalid}
         areBestDividendsStale={areBestDividendsStale}
+        hasBiggestGapsWarning={areBiggestGapsInvalid}
       />
 
       <RadixToast.Viewport className="toastViewport" />

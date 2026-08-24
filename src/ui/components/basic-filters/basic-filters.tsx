@@ -20,14 +20,14 @@ interface BasicFiltersProps {
   biggestGapsEnabled: boolean
   toggleBiggestGaps: (enabled: boolean) => void
   setBiggestGaps: (biggestGaps: BiggestGaps) => void
+  hasBiggestGapsWarning: boolean
 }
 
 export const BasicFilters = ({
   startDate, setSymbol,
   cheapStocksEnabled, toggleCheapStocks, setCheapStocks, hasCheapStocksWarning,
   bestDividendsEnabled, toggleBestDividends, setBestDividends, areBestDividendsStale,
-  biggestGapsEnabled, toggleBiggestGaps, setBiggestGaps
-
+  biggestGapsEnabled, toggleBiggestGaps, setBiggestGaps, hasBiggestGapsWarning
 }: BasicFiltersProps) =>
 (
   <section
@@ -42,7 +42,7 @@ export const BasicFilters = ({
       startDate={startDate}
       setCheapStocks={setCheapStocks}
       setSymbol={setSymbol}
-      hasCheapStocksWarning={hasCheapStocksWarning}
+      hasWarning={hasCheapStocksWarning}
     />
     <BestDividends
       enabled={bestDividendsEnabled}
@@ -57,6 +57,7 @@ export const BasicFilters = ({
       setBiggestGaps={setBiggestGaps}
       setSymbol={setSymbol}
       startDate={startDate}
+      hasWarning={hasBiggestGapsWarning}
     />
   </section>
 );

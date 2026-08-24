@@ -2,8 +2,11 @@ import { useState } from 'react';
 
 import { uiErrors } from '../../utils/ui-errors';
 import { printUiError } from '../../utils/messages';
-import { biggestGapsController, biggestGapsControllerLegend, biggestGapsSliderWrapper } from './biggest-gaps.module.scss';
+import {
+  biggestGapsController, biggestGapsControllerLegend, biggestGapsSliderWrapper, biggestGapsWarningIcon, trianglePulse
+} from './biggest-gaps.module.scss';
 import { Slider, Switch } from '../../design-system';
+import { WarningIcon } from '../../design-system/icons';
 
 interface BiggestGapsProps {
   enabled: boolean
@@ -11,10 +14,11 @@ interface BiggestGapsProps {
   setBiggestGaps: (biggestGaps: BiggestGaps) => void
   setSymbol: (symbol: string) => void
   startDate: Date
+  hasWarning: boolean
 }
 
-export const BiggestGaps = ({ enabled, setEnabled, setBiggestGaps, setSymbol, startDate }: BiggestGapsProps) => {
-  const [countArr, setCountArr] = useState([0]);
+export const BiggestGaps = ({ enabled, setEnabled, setBiggestGaps, setSymbol, startDate, hasWarning }: BiggestGapsProps) => {
+  const [countArr, setCountArr] = useState([10]);
   const count = countArr[0];
   const [loading, setLoading] = useState(false);
 
@@ -61,6 +65,11 @@ export const BiggestGaps = ({ enabled, setEnabled, setBiggestGaps, setSymbol, st
     <fieldset className={biggestGapsController}>
       <legend className={biggestGapsControllerLegend}>
         {findBiggestGapsLabel}
+        {enabled && hasWarning && (
+          <div className={biggestGapsWarningIcon} data-tooltip="Biggest gaps list might be stale or incomplete">
+            <WarningIcon size={20} className={trianglePulse} />
+          </div>
+        )}
       </legend>
       <div className={biggestGapsSliderWrapper}>
         <Slider

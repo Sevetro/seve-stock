@@ -17,7 +17,8 @@ export const errors = {
   notEnoughFinancialQuarters: (symbol: string) => `Couldn't fetch enough financial quarters for ${symbol}`,
   freshTtmFinancialDataUnavailable: (symbol: string) => `Fresh ${symbol} financial data unavailable, using stale data from cache.`,
   cantGetCombinedInfo: (symbol: string) => `Couldn't get combined info for ${symbol}`,
-  freshDividendUnavailable: (symbol: string) => `Fresh ${symbol} dividend data unavailable, using stale data from cache.`
+  freshDividendUnavailable: (symbol: string) => `Fresh ${symbol} dividend data unavailable, using stale data from cache.`,
+  invalidData: (symbol: string) => `Invalid data for ${symbol}.`
 } as const;
 
 export function isError(err: unknown): err is Error {
