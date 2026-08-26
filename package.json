@@ -12,9 +12,12 @@
     "dev": "npm-run-all --parallel dev:react dev:electron scss:types",
     "dev:react": "vite",
     "dev:electron": "npm run transpile:electron && cross-env NODE_ENV=dev electron .",
-    "scss:types": "typed-scss-modules src/ui/**/*.module.scss --exportType named --watch",
-    "build": "tsc -b && vite build",
+    "scss:types": "typed-scss-modules src/ui/**/*.module.scss --exportType named --implementation sass --watch",
+    "scss:types:once": "typed-scss-modules src/ui/**/*.module.scss --exportType named --implementation sass",
+    "build": "npm run scss:types:once && tsc -b && vite build",
     "lint": "eslint .",
+    "test": "vitest run",
+    "diagnose:yahoo": "node ./scripts/diagnose-yahoo.js",
     "preview": "vite preview",
     "transpile:electron": "tsc -p src/electron/tsconfig.json",
     "dist:prepare": "rimraf dist && npm run transpile:electron && npm run build",
@@ -53,10 +56,12 @@
     "npm-run-all": "^4.1.5",
     "release-it": "^19.0.6",
     "rimraf": "^6.1.2",
+    "sass": "^1.103.1",
     "sass-embedded": "^1.93.3",
     "typed-scss-modules": "^8.1.1",
     "typescript": "~5.8.3",
     "typescript-eslint": "^8.39.1",
-    "vite": "^7.1.2"
+    "vite": "^7.1.2",
+    "vitest": "^4.1.11"
   }
 }

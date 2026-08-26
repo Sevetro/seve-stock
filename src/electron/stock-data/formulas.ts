@@ -104,7 +104,6 @@ export async function getCombinedInfo(
     const highestPrice = await getHighestPrice(symbol, startDate, yahooFinance, webContents);
 
     if (quote === undefined ||
-      ttmFinancialData === undefined ||
       avgPrice === undefined ||
       highestPrice === undefined) throw new Error(errors.cantGetCombinedInfo(symbol));
 
@@ -113,6 +112,7 @@ export async function getCombinedInfo(
 
     if (quote.dividend !== 0 && prevYearDividend !== 0) dividend = (quote.dividend + prevYearDividend) / 2;
     else dividend = quote.dividend || prevYearDividend;
+    dividend = Number(dividend.toFixed(1));
 
     const priceChange = numberToFixed(quote.price / avgPrice * 100, 0);
     const priceGap = numberToFixed(quote.price / highestPrice * 100, 0);
