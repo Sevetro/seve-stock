@@ -19,6 +19,7 @@ Electron desktop app for analyzing stocks on the Warsaw Stock Exchange (GPW). Da
 
 ## Build and Test
 - Install: `npm install`
+- CI uses Node.js 22; `yahoo-finance2` requires Node.js 22 or newer.
 - Dev (React + Electron together, with SCSS type watcher): `npm run dev`
 - Lint: `npm run lint` (ESLint 9 flat config, TypeScript + React rules)
 - Unit tests: `npm test` (Vitest; deterministic fixture tests with no network access)
