@@ -1,7 +1,7 @@
 import fs from 'fs';
 import path from 'path';
 import { WebContents } from 'electron';
-import { FundamentalsTimeSeriesFinancialsResult, FundamentalsTimeSeriesResult } from 'yahoo-finance2/modules/fundamentalsTimeSeries';
+import { FundamentalsTimeSeriesResult } from 'yahoo-finance2/modules/fundamentalsTimeSeries';
 import { differenceInHours } from 'date-fns';
 
 import { YahooFinanceType } from '../main.js';
@@ -12,6 +12,7 @@ import { dataCacheDirname } from './constants.js';
 import { timestampParser } from './utils.js';
 import { staleTtmFinancialDataHours } from './config.js';
 import { logs } from '../shared-with-ui/logs.js';
+import { getLatestTtmFinancialResult, getMissingTtmFields, mapTtmFinancialData } from './financials.utils.js';
 
 const ttmFinancialDataCachePath = path.join(dataCacheDirname, 'ttm-financial-data');
 
@@ -22,39 +23,27 @@ async function fetchTtmFinancialData(
 ) {
   const period1 = new Date(Date.now() - 366 * 24 * 60 * 60 * 1000).toISOString().split('T')[0];
   try {
-    const ttmFinancialResults = (await yahooFinance.fundamentalsTimeSeries(yahooSymbol, {
+    const ttmFinancialResults = await yahooFinance.fundamentalsTimeSeries(yahooSymbol, {
       period1,
       module: 'financials',
       type: 'trailing'
     }, {
       validateResult: false
-    }) as FundamentalsTimeSeriesResult[]).filter(
-      (item): item is FundamentalsTimeSeriesFinancialsResult => item.TYPE === 'FINANCIALS'
-    );
+    }) as FundamentalsTimeSeriesResult[];
+    const latestTtmFinancialResult = getLatestTtmFinancialResult(ttmFinancialResults);
 
-    if (ttmFinancialResults?.[0] === undefined) throw new Error(errors.cantFetchTtmFinancialData(yahooSymbol));
+    const missingFields = getMissingTtmFields(latestTtmFinancialResult);
 
-    const {
-      totalRevenue, grossProfit, operatingIncome, EBITDA, EBIT, netIncome
-    } = ttmFinancialResults[0];
+    if (missingFields.length > 0) {
+      printAndSendLog(webContents, fetchTtmFinancialData.name, logs.partialTtmFinancialData(yahooSymbol, missingFields));
+    }
 
-    // Yahoo occasionally omits some trailing financial fields; bail out rather than caching undefined/NaN
-    if (totalRevenue === undefined || grossProfit === undefined || operatingIncome === undefined ||
-      EBITDA === undefined || EBIT === undefined || netIncome === undefined
-    ) throw new Error(errors.cantFetchTtmFinancialData(yahooSymbol));
+    const financialData = missingFields.length > 0
+      ? (await yahooFinance.quoteSummary(yahooSymbol, { modules: ['financialData'] })).financialData
+      : undefined;
+    const { data: ttmFinancialData, hasUsableMetrics } = mapTtmFinancialData(latestTtmFinancialResult, financialData);
 
-    const ttmFinancialData: TtmFinancialData = {
-      totalRevenue,
-      grossProfit,
-      operatingIncome,
-      EBITDA,
-      EBIT,
-      netIncome,
-      grossProfitMargin: Number((grossProfit / totalRevenue * 100).toFixed(2)),
-      operatingMargin: Number((operatingIncome / totalRevenue * 100).toFixed(2)),
-      ebitMargin: Number((EBIT / totalRevenue * 100).toFixed(2)),
-      netIncomeMargin: Number((netIncome / totalRevenue * 100).toFixed(2))
-    };
+    if (!hasUsableMetrics) throw new Error(`${errors.cantFetchTtmFinancialData(yahooSymbol)} No usable financial metrics returned.`);
 
     const today = new Date();
     const financialDataWithTimestamp: TtmFinancialDataCache = {

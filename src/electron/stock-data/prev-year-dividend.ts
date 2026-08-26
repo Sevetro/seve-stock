@@ -9,7 +9,7 @@ import { PrevYearDividendDataCache } from './types.js';
 import { timestampParser } from './utils.js';
 import { differenceInHours, getYear } from 'date-fns';
 import { stalePrevYearDividendHours } from './config.js';
-import { errors, isError } from '../shared-with-ui/errors.js';
+import { errors, getErrorMsg, isError } from '../shared-with-ui/errors.js';
 import { logs } from '../shared-with-ui/logs.js';
 
 const prevYearDividendDataCachePath = path.join(dataCacheDirname, 'prev-year-dividend-data');
@@ -64,7 +64,7 @@ async function fetchPrevYearDividend(
       prevYearDividendToAvgPrice
     };
   } catch (err) {
-    printAndSendError(webContents, fetchPrevYearDividend.name, err);
+    printAndSendError(webContents, fetchPrevYearDividend.name, new Error(`${symbol}: ${getErrorMsg(err)}`));
   }
 }
 

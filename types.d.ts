@@ -93,22 +93,23 @@ interface PrevYearDividendData {
 }
 
 interface RawTtmFinancialData {
-  totalRevenue: number
-  grossProfit: number
-  operatingIncome: number
-  EBITDA: number
-  EBIT: number
-  netIncome: number
+  totalRevenue?: number
+  grossProfit?: number
+  operatingIncome?: number
+  EBITDA?: number
+  EBIT?: number
+  netIncome?: number
 }
 
 interface TtmFinancialData extends RawTtmFinancialData {
-  grossProfitMargin: number
-  operatingMargin: number
-  ebitMargin: number
-  netIncomeMargin: number
+  grossProfitMargin?: number
+  operatingMargin?: number
+  ebitMargin?: number
+  netIncomeMargin?: number
+  returnOnEquity?: number
 }
 
-interface CombinedInfo extends Quote, TtmFinancialData {
+interface CombinedInfo extends Quote, Partial<TtmFinancialData> {
   dividend: Dividend
   priceChange: number
   priceGap: number

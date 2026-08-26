@@ -15,6 +15,8 @@
     "scss:types": "typed-scss-modules src/ui/**/*.module.scss --exportType named --watch",
     "build": "tsc -b && vite build",
     "lint": "eslint .",
+    "test": "vitest run",
+    "diagnose:yahoo": "node ./scripts/diagnose-yahoo.js",
     "preview": "vite preview",
     "transpile:electron": "tsc -p src/electron/tsconfig.json",
     "dist:prepare": "rimraf dist && npm run transpile:electron && npm run build",
@@ -57,6 +59,7 @@
     "typed-scss-modules": "^8.1.1",
     "typescript": "~5.8.3",
     "typescript-eslint": "^8.39.1",
-    "vite": "^7.1.2"
+    "vite": "^7.1.2",
+    "vitest": "^4.1.11"
   }
 }

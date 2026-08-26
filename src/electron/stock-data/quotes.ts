@@ -47,7 +47,7 @@ async function fetchQuote(symbol: string, yahooFinance: YahooFinanceType, webCon
       if (trailingAnnualDividendYield != null && trailingAnnualDividendYield !== 0) return trailingAnnualDividendYield * 100;
       return 0;
     }
-    const dividend = calcDividend();
+    const dividend = Number(calcDividend().toFixed(1));
 
     const quote: Quote = {
       price: regularMarketPrice,
