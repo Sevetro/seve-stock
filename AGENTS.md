@@ -23,11 +23,11 @@ Electron desktop app for analyzing stocks on the Warsaw Stock Exchange (GPW). Da
 - Lint: `npm run lint` (ESLint 9 flat config, TypeScript + React rules)
 - Unit tests: `npm test` (Vitest; deterministic fixture tests with no network access)
 - Yahoo API diagnostic: `npm run diagnose:yahoo [-- SYMBOL.WA ...]` checks live `fundamentalsTimeSeries`, `quoteSummary`, `chart`, and `quote` endpoints. Run it manually when diagnosing source-data issues; never make it a build/PR gate because Yahoo Finance is an unofficial, rate-limited API.
+- GitHub Actions runs `lint`, `test`, and `build` for pushes and pull requests. The Yahoo diagnostic runs daily at 06:15 UTC and on manual dispatch; its JSON report is uploaded as a workflow artifact and does not block CI.
 - Production build: `npm run build` (`tsc -b` + `vite build`)
 - Electron main transpile only: `npm run transpile:electron`
 - Platform installers: `npm run dist:win` / `dist:mac` / `dist:linux`
 - Release (Windows): `npm run release:win "<release name>"` wraps `release-it`. The `before:release` hook in `.release-it.json` intentionally builds the installer *before* git commit/tag/push, so a failed build never leaves an orphaned tag on the remote — don't move that hook to `before:github:release`.
-- No automated test suite currently exists in this repo.
 - After editing any file, check it for compile/lint errors (e.g. via the editor's diagnostics or `npm run lint`) and fix them before considering the change done — don't hand back a file with new errors introduced by your edit.
 
 ## Conventions
