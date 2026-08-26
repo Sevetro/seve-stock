@@ -1,62 +1,51 @@
+# Seve Stock
 
-fundamentalsTimeSeries possible values: financials / balance-sheet / cash-flow / all
-## Expanding the ESLint configuration
+Desktop application for analyzing Warsaw Stock Exchange (GPW) companies with Yahoo Finance data.
 
-If you are developing a production application, we recommend updating the configuration to enable type-aware lint rules:
+## Requirements
 
-```js
-export default tseslint.config([
-  globalIgnores(["dist"]),
-  {
-    files: ["**/*.{ts,tsx}"],
-    extends: [
-      // Other configs...
+- Node.js 22 or newer
+- npm
+- Windows for Windows installer builds
 
-      // Remove tseslint.configs.recommended and replace with this
-      ...tseslint.configs.recommendedTypeChecked,
-      // Alternatively, use this for stricter rules
-      ...tseslint.configs.strictTypeChecked,
-      // Optionally, add this for stylistic rules
-      ...tseslint.configs.stylisticTypeChecked,
+## Development
 
-      // Other configs...
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ["./tsconfig.node.json", "./tsconfig.app.json"],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-]);
+```powershell
+npm install
+npm run dev
 ```
 
-You can also install [eslint-plugin-react-x](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-x) and [eslint-plugin-react-dom](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-dom) for React-specific lint rules:
+`npm run dev` starts the Vite renderer, recompiles Electron, and watches SCSS module type definitions.
 
-```js
-// eslint.config.js
-import reactX from "eslint-plugin-react-x";
-import reactDom from "eslint-plugin-react-dom";
+## Quality Checks
 
-export default tseslint.config([
-  globalIgnores(["dist"]),
-  {
-    files: ["**/*.{ts,tsx}"],
-    extends: [
-      // Other configs...
-      // Enable lint rules for React
-      reactX.configs["recommended-typescript"],
-      // Enable lint rules for React DOM
-      reactDom.configs.recommended,
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ["./tsconfig.node.json", "./tsconfig.app.json"],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-]);
+```powershell
+npm run lint
+npm test
+npm run build
 ```
+
+- `lint` runs ESLint.
+- `test` runs deterministic Vitest fixture tests without network access.
+- `build` regenerates ignored SCSS module declarations, type-checks the projects, and builds the production renderer.
+
+GitHub Actions runs these checks for pushes and pull requests. Protect `main` with the `CI / verify` required status check to prevent merging a failing pull request.
+
+## Yahoo Finance Diagnostics
+
+```powershell
+npm run diagnose:yahoo
+npm run diagnose:yahoo -- BHW.WA PZU.WA
+```
+
+The diagnostic queries live Yahoo `fundamentalsTimeSeries`, `quoteSummary`, `chart`, and `quote` endpoints. It is for investigating source-data changes and is not a CI gate because Yahoo Finance is unofficial and rate-limited.
+
+A scheduled GitHub Actions workflow stores a daily JSON report as an artifact. It can also be run manually from the Actions tab.
+
+## Release
+
+```powershell
+npm run release:win "v3.1.1"
+```
+
+The release workflow builds the Windows installer before it creates the release commit, tag, push, and GitHub Release. The installer is written to `dist/`.
